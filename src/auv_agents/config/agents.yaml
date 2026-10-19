@@ -1,0 +1,31 @@
+# LangGraph multi-agent configuration.
+graph:
+  max_replans: 2                # same budget as v1's executor
+  max_validation_retries: 2
+  approval: auto                # auto | interrupt (human-in-the-loop: pause for operator approval)
+  checkpoint_db: traces/checkpoints.sqlite
+  abort_surface_timeout_s: 120.0
+  max_inspections_per_step: 3   # sonar-cued inspection attempts before replanning
+
+supervisor:
+  provider: ollama              # name in auv_mission_planner/config/llm.yaml (ollama | groq | mock)
+
+diagnostics:
+  provider: ollama              # LLM that explains faults; deterministic fallback if it fails
+  use_llm: true
+
+perception:
+  gate_pair_tolerance_m: 0.35   # two sonar contacts ~gate width apart -> gate (sonar-only)
+  false_target_scans: 2         # unconfirmed contact seen this many times -> suspected false target
+  false_target_max_range_frac: 0.6   # ... while inside this fraction of the camera's visible range
+  inspect_standoff_m: 1.5       # sonar-cued inspection: stop this far from an unclassified contact
+  vlm:
+    provider: none              # none | mock | groq | ollama
+    timeout_s: 25.0             # latency budget per query; slower answers are discarded
+    groq_model: meta-llama/llama-4-scout-17b-16e-instruct
+    ollama_model: moondream
+    ollama_host: http://127.0.0.1:11437
+
+navigation:
+  dead_reckoning_pos_std_m: 0.5 # above this the nav agent declares degraded navigation
+  degraded_speed_factor: 0.5

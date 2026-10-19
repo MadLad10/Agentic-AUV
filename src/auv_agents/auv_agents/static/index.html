@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AUV Mission Control</title>
+<style>
+:root{--bg:#0b1419;--panel:#122029;--line:#22394a;--text:#d7e3ea;--muted:#8aa3b3;--ok:#5ad08a;--bad:#ff6b6b;--warn:#ffcf5c;--acc:#59b9ff}
+*{box-sizing:border-box}body{margin:0;font:14px/1.4 system-ui,sans-serif;background:var(--bg);color:var(--text)}
+header{display:flex;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:16px;margin:0 12px 0 0}input[type=text]{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);color:var(--text);padding:8px;border-radius:6px}
+button{background:var(--acc);color:#04121c;border:0;padding:8px 12px;border-radius:6px;font-weight:600;cursor:pointer}
+button.bad{background:var(--bad)}button.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+main{display:grid;grid-template-columns:1fr 1fr 360px;gap:12px;padding:12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;min-width:0}
+.panel h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+img,canvas{width:100%;border-radius:6px;display:block;background:#000}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px}.kv span:nth-child(odd){color:var(--muted)}
+#events{height:420px;overflow:auto;font:12px/1.45 ui-monospace,monospace}#events div{border-bottom:1px solid #1a2c38;padding:2px 0}
+.agent{color:var(--acc)}.fault{color:var(--bad)}.okc{color:var(--ok)}
+pre{white-space:pre-wrap;font-size:12px;max-height:220px;overflow:auto;margin:6px 0}
+@media (max-width:1100px){main{grid-template-columns:1fr}}
+</style></head><body>
+<header><h1>AUV Mission Control</h1>
+<input id="prompt" type="text" value="pass through the gate, touch the red buoy, then surface">
+<button onclick="send()">Plan mission</button>
+<select id="fault" class="ghost"><option value="">inject fault…</option>
+<option>dvl_dropout</option><option>camera_blackout</option><option value="turbidity">turbidity</option><option>leak</option>
+<option value="thruster_dead">thruster_dead (surge_left)</option><option>sonar_false_target</option><option>imu_bias</option></select>
+<button class="ghost" onclick="inject()">Inject</button></header>
+<main>
+<section class="panel"><h2>Front camera</h2><img id="cam" alt="front camera"></section>
+<section class="panel"><h2>Third-person view</h2><img id="spec" alt="spectator view"><h2 style="margin-top:10px">Top-down: truth (white) / EKF (blue)</h2><canvas id="map" width="600" height="400"></canvas></section>
+<section class="panel"><h2>Plan approval</h2><div id="plan">no plan waiting</div>
+<div id="approve" style="display:none;gap:8px;margin:6px 0"><button onclick="decide('approve')">Approve</button> <button class="bad" onclick="decide('reject')">Reject</button></div>
+<h2 style="margin-top:12px">Vehicle</h2><div class="kv" id="vehicle"></div>
+<h2 style="margin-top:12px">Agents</h2><div id="events"></div></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+async function post(u,b){return (await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json()}
+function send(){post('/api/mission',{prompt:$('prompt').value})}
+function decide(d){post('/api/approve',{decision:d})}
+function inject(){const v=$('fault').value;if(!v)return;const p={turbidity:{visibility_m:2.0},thruster_dead:{name:'surge_left'},sonar_false_target:{x:6,y:0.5,z:-1.5},imu_bias:{gyro_bias_z:0.02}}[v]||{};post('/api/fault',{type:v,params:p})}
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function drawMap(s){const c=$('map'),g=c.getContext('2d'),P=s.pool,x0=P.x_min??-5,sx=c.width/P.length,sy=c.height/P.width;
+ const T=(x,y)=>[(x-x0)*sx,c.height/2-y*sy];g.fillStyle='#14313f';g.fillRect(0,0,c.width,c.height);
+ const col={gate:'#ff8c1a',red_buoy:'#ff4d4d',green_buoy:'#3ee06b',yellow_buoy:'#ffe14d'};
+ for(const o of s.objects){g.fillStyle=g.strokeStyle=col[o.class]||'#ccc';if(o.class==='gate'){g.lineWidth=4;g.beginPath();g.moveTo(...T(o.x,o.y-1));g.lineTo(...T(o.x,o.y+1));g.stroke()}else{g.beginPath();g.arc(...T(o.x,o.y),5,0,7);g.fill()}}
+ for(const [i,cl] of [[0,'#f0f0f0'],[2,'#59b9ff']]){g.strokeStyle=cl;g.lineWidth=i?1.5:2.5;g.beginPath();s.track.forEach((p,k)=>{const q=T(p[i],p[i+1]);k?g.lineTo(...q):g.moveTo(...q)});g.stroke()}}
+async function tick(){try{const s=await (await fetch('/api/state')).json();
+ const h=s.health,f=h.faults.map(x=>x.type).join(', ')||'none';
+ $('vehicle').innerHTML=`<span>sim time</span><span>${s.t} s ${s.running?'(mission running)':''}</span><span>depth (true / EKF)</span><span>${s.truth.depth} / ${s.estimate.depth} m</span><span>EKF error</span><span>${Math.hypot(s.truth.x-s.estimate.x,s.truth.y-s.estimate.y).toFixed(2)} m (σ ${s.estimate.pos_std_m})</span><span>battery</span><span>${s.battery}%</span><span>DVL</span><span>${s.dvl_valid?'<span class=okc>valid</span>':'<span class=fault>NO LOCK</span>'}</span><span>health</span><span class="${h.faults.length?'fault':'okc'}">${esc(f)}${h.veto?' — VETO: '+esc(h.veto_reason):''}</span><span>referee</span><span>gate ${s.referee.gate_passed?'✓':'–'}, buoys ${esc(s.referee.buoys_touched.join(',')||'–')}, collisions ${s.referee.collisions}</span><span>outcome</span><span>${esc(s.outcome||'–')}</span>`;
+ if(s.pending_plan){$('plan').innerHTML='<pre>'+esc(s.pending_plan.steps.map(x=>`${x.id}. ${x.tool} ${JSON.stringify(x.params)}`).join('\n'))+'</pre>';$('approve').style.display='flex'}else{$('plan').textContent='no plan waiting';$('approve').style.display='none'}
+ $('events').innerHTML=s.events.slice().reverse().map(e=>`<div>[${e.t}] <span class=agent>${esc(e.agent)}</span> ${esc(e.msg)}</div>`).join('');drawMap(s)}catch(e){}}
+setInterval(tick,700);setInterval(()=>{$('cam').src='/api/camera.jpg?'+Date.now();$('spec').src='/api/spectator.jpg?'+Date.now()},1000);tick();
+</script></body></html>
