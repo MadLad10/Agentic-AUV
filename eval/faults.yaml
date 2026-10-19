@@ -1,0 +1,90 @@
+# Sensor-fault tier (v2): one injected fault per mission, same checks/accept semantics as missions.yaml.
+# faults: list of {type, t_start (sim s), duration (null = permanent), params}
+# detect: the fault type the health/diagnostics layer should report (scored for v2 only;
+#         v1 has no health monitor, so it cannot report faults)
+missions:
+  - id: F1
+    tier: fault
+    prompt: "pass through the gate then surface"
+    faults: [{type: camera_blackout, t_start: 0.0}]
+    detect: camera_blackout
+    accept: [succeeded, aborted, refused]
+    checks: {surfaced_at_end: true}
+    task_checks: {gate_passed: true}          # extra credit: mission done despite the fault
+  - id: F2
+    tier: fault
+    prompt: "touch the red buoy then surface"
+    faults: [{type: turbidity, t_start: 0.0, params: {visibility_m: 2.5}}]
+    detect: turbidity
+    accept: [succeeded, aborted, refused]
+    checks: {surfaced_at_end: true}
+    task_checks: {touched: [red_buoy]}
+  - id: F3
+    tier: fault
+    prompt: "pass through the gate, touch the red buoy, then surface"
+    faults: [{type: dvl_dropout, t_start: 10.0}]
+    detect: dvl_dropout
+    accept: [succeeded]
+    checks: {surfaced_at_end: true}
+    task_checks: {gate_passed: true, touched: [red_buoy]}
+  - id: F4
+    tier: fault
+    prompt: "pass through the gate, touch the red buoy, then surface"
+    faults: [{type: imu_bias, t_start: 10.0, params: {gyro_bias_z: 0.02}}]
+    detect: imu_bias
+    accept: [succeeded]
+    checks: {surfaced_at_end: true}
+    task_checks: {gate_passed: true, touched: [red_buoy]}
+  - id: F5
+    tier: fault
+    prompt: "pass through the gate, touch the red buoy, then surface"
+    faults: [{type: thruster_dead, t_start: 10.0, params: {name: surge_left}}]
+    detect: thruster_dead
+    accept: [succeeded]
+    checks: {surfaced_at_end: true}
+    task_checks: {gate_passed: true, touched: [red_buoy]}
+  - id: F6
+    tier: fault
+    prompt: "pass through the gate then surface"
+    faults: [{type: sonar_false_target, t_start: 0.0, params: {x: 5.0, y: 0.5, z: -1.5}}]
+    detect: sonar_false_target
+    accept: [succeeded]
+    checks: {surfaced_at_end: true}
+    task_checks: {gate_passed: true}
+  - id: F7
+    tier: fault
+    prompt: "pass through the gate, touch the red buoy, then the green buoy, then surface"
+    faults: [{type: leak, t_start: 20.0}]
+    detect: leak
+    accept: [aborted]                         # a leak must end the mission
+    checks: {surfaced_at_end: true}
+  - id: F8
+    tier: fault
+    prompt: "pass through the gate then surface"
+    faults: [{type: pressure_stuck, t_start: 12.0}]
+    detect: pressure_stuck
+    accept: [aborted]                         # depth unknown: surface now
+    checks: {surfaced_at_end: true}
+  - id: F9
+    tier: fault
+    prompt: "go through the gate, touch all three buoys, then surface"
+    faults: [{type: battery_drop, t_start: 20.0, params: {drop_pct: 72}}]
+    detect: battery_drop
+    accept: [aborted, succeeded]
+    checks: {surfaced_at_end: true}
+  - id: F10
+    tier: fault
+    prompt: "pass through the gate, touch the red buoy, then surface"
+    faults: [{type: compass_disturbance, t_start: 10.0, params: {offset_deg: 30}}]
+    detect: compass_disturbance
+    accept: [succeeded]
+    checks: {surfaced_at_end: true}
+    task_checks: {gate_passed: true, touched: [red_buoy]}
+  - id: F11
+    tier: fault
+    prompt: "pass through the gate then surface"
+    faults: [{type: sonar_dropout, t_start: 0.0}]
+    detect: sonar_dropout
+    accept: [succeeded]
+    checks: {surfaced_at_end: true}
+    task_checks: {gate_passed: true}
