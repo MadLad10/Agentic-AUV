@@ -1,0 +1,51 @@
+{
+ "gif": "docs/media/v2_blackout_sonar_gate.gif",
+ "png": "docs/media/v2_blackout_sonar_gate_nav.png",
+ "frames": 41,
+ "steps": [
+  "[perception] 0 tracks, 0 unclassified sonar contacts",
+  "[navigation] nav mode nominal",
+  "[supervisor] plan: hold_depth -> navigate_to -> surface",
+  "[safety_validator] plan OK",
+  "[operator] plan auto-approved",
+  "[executor] step 1 hold_depth ok: depth 1.52 vs 1.5 \u00b1 0.4",
+  "[health] new faults: ['camera_blackout']; degraded modes ['sonar_only']",
+  "[diagnostics] [rules] ['camera_blackout'] -> sonar_only, action replan: camera frames dark (mean 0.0)",
+  "[supervisor] replanning (1/2): not executed: faults ['camera_blackout'] detected; degraded mode sonar_only; camera frames dark (mean 0.0)",
+  "[supervisor] replan: navigate_to -> surface",
+  "[safety_validator] plan OK",
+  "[operator] plan auto-approved",
+  "[executor] step 1 navigate_to ok: tool reported ok",
+  "[executor] step 2 surface ok: depth 0.14",
+  "[supervisor] mission finished: succeeded",
+  "outcome: succeeded"
+ ],
+ "faults": [
+  "camera_blackout:0"
+ ],
+ "mode": "graph+replayed LLM plans",
+ "referee": {
+  "gate_passed": true,
+  "buoys_touched": [],
+  "touch_order": [],
+  "surfaced": true,
+  "surfaced_at_end": true,
+  "max_depth_m": 1.77,
+  "boundary_contacts": 0,
+  "collisions": 0,
+  "path_length_m": 12.8,
+  "final": {
+   "x": 9.32,
+   "y": -0.25,
+   "depth": 0.13
+  },
+  "localisation": {
+   "rmse_xy_m": 0.052,
+   "max_xy_m": 0.083,
+   "final_xy_m": 0.043,
+   "rmse_depth_m": 0.009,
+   "samples": 808
+  },
+  "sim_time_s": 40.4
+ }
+}

@@ -1,0 +1,8 @@
+string prompt
+string provider     # empty = default from config/llm.yaml
+bool dry_run        # plan + validate only, do not execute
+---
+bool accepted
+string mission_id
+string plan_json
+string message

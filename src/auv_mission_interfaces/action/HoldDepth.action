@@ -1,0 +1,9 @@
+float64 depth
+float64 duration_s
+float64 tolerance_m
+---
+bool success
+string message
+float64 mean_error_m
+---
+float64 current_depth

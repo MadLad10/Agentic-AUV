@@ -1,0 +1,17 @@
+# numpy pinned to the ABI ROS 2 Humble's binary packages were built with
+numpy==1.26.4
+# ROS 2 Humble's launch_testing pytest plugin breaks on pytest >= 8
+pytest==7.4.4
+pydantic>=2.7
+pyyaml
+pillow
+mujoco>=3.3
+langgraph>=1.0
+langchain-core>=1.0
+mcp>=1.10
+httpx
+langgraph-checkpoint-sqlite
+opentelemetry-sdk
+opentelemetry-exporter-otlp-proto-http
+fastapi
+uvicorn

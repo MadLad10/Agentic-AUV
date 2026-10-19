@@ -1,0 +1,61 @@
+# AUV mission planner configuration.
+# Swap the vehicle: change `backend` (sim -> real). Every topic/action/service name the tools layer
+# uses comes from interfaces.<backend>; no names are hard-coded in the tools.
+backend: sim
+
+interfaces:
+  sim:                       # stand-in Gazebo sim (auv_sim)
+    odom_topic: /auv/odom                 # nav_msgs/Odometry, ENU world, z=0 at surface
+    battery_topic: /auv/battery           # sensor_msgs/BatteryState (percentage 0..1)
+    detections_topic: /auv/detections     # auv_mission_interfaces/DetectionArray
+    navigate_action: /auv/navigate_to     # auv_mission_interfaces/action/NavigateTo
+    search_action: /auv/search            # auv_mission_interfaces/action/Search
+    hold_depth_action: /auv/hold_depth    # auv_mission_interfaces/action/HoldDepth
+    surface_action: /auv/surface          # auv_mission_interfaces/action/Surface
+    emergency_service: /auv/emergency_surface   # std_srvs/Trigger
+  real:                    # real vehicle via backends/auv_adapter.py (serves the same interfaces
+                             # on top of AUV's `control` action, /dvl/position, camera_topic, MAVLink)
+    odom_topic: /auv_adapter/odom
+    battery_topic: /auv_adapter/battery
+    detections_topic: /auv_adapter/detections
+    navigate_action: /auv_adapter/navigate_to
+    search_action: /auv_adapter/search
+    hold_depth_action: /auv_adapter/hold_depth
+    surface_action: /auv_adapter/surface
+    emergency_service: /auv_adapter/emergency_surface
+
+mission_interfaces:
+  submit_service: /auv/submit_mission    # auv_mission_interfaces/srv/SubmitMission
+  status_topic: /auv/mission_status      # auv_mission_interfaces/msg/MissionStatus
+
+# Safety limits enforced by the validator (before execution) and by the tools layer (at runtime).
+limits:
+  allowed_tools: [get_detections, navigate_to, search_pattern, hold_depth, get_battery, get_pose, surface, abort]
+  known_objects: [gate, red_buoy, green_buoy, yellow_buoy]
+  min_depth_m: 0.0
+  max_depth_m: 4.0
+  geofence: {x_min: -4.0, x_max: 24.0, y_min: -9.0, y_max: 9.0}
+  max_speed_mps: 0.6
+  min_battery_abort_pct: 15.0       # a plan may not set a battery abort below this
+  default_battery_abort_pct: 20.0   # inserted if the plan has none
+  min_battery_to_start_pct: 25.0    # runtime precheck before each motion step
+  max_step_timeout_s: 240.0
+  max_mission_time_s: 900.0
+  max_steps: 20
+  max_hold_duration_s: 120.0
+  max_search_radius_m: 12.0
+
+tools:
+  memory_s: 120.0          # how long a detection stays usable for object targets
+  min_confidence: 0.4
+  gate_approach_m: 1.5     # pass_through: waypoint before/after the gate centre
+  gate_clearance_m: 1.0    # surface: if this close to the gate centre, drive out first
+  default_search_depth_m: 1.5   # search started from near the surface goes to this depth
+  touch_approach_m: 1.5    # touch: pause this far out to refine the estimate
+  default_tolerance_m: 0.35
+  wall_timeout_factor: 3.0 # wall-clock safety net = factor * sim timeout + 15 s
+
+executor:
+  max_replans: 2
+  watchdog_period_s: 1.0
+  abort_surface_timeout_s: 90.0

@@ -1,0 +1,44 @@
+{
+ "gif": "docs/media/v2_dvl_dropout.gif",
+ "png": "docs/media/v2_dvl_dropout_nav.png",
+ "frames": 52,
+ "steps": [
+  "navigate_to {'x': 2.0, 'y': 0.0, 'depth': 1.5}: ok",
+  "navigate_to {'target': 'gate'}: ok",
+  "search_pattern {'target': 'red_buoy'}: ok",
+  "navigate_to {'target': 'red_buoy'}: ok",
+  "surface {}: ok"
+ ],
+ "faults": [
+  "dvl_dropout:10"
+ ],
+ "mode": "scripted tools",
+ "referee": {
+  "gate_passed": true,
+  "buoys_touched": [
+   "red_buoy"
+  ],
+  "touch_order": [
+   "red_buoy"
+  ],
+  "surfaced": true,
+  "surfaced_at_end": true,
+  "max_depth_m": 1.54,
+  "boundary_contacts": 0,
+  "collisions": 0,
+  "path_length_m": 16.8,
+  "final": {
+   "x": 13.57,
+   "y": -2.26,
+   "depth": 0.13
+  },
+  "localisation": {
+   "rmse_xy_m": 0.148,
+   "max_xy_m": 0.301,
+   "final_xy_m": 0.3,
+   "rmse_depth_m": 0.008,
+   "samples": 1030
+  },
+  "sim_time_s": 51.5
+ }
+}

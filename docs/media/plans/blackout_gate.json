@@ -1,0 +1,82 @@
+[
+ {
+  "status": "plan",
+  "reason": "",
+  "plan": {
+   "summary": "replayed",
+   "abort_conditions": [
+    {
+     "type": "battery_below",
+     "percent": 20
+    }
+   ],
+   "steps": [
+    {
+     "id": 1,
+     "tool": "hold_depth",
+     "params": {
+      "depth": 1.5,
+      "duration_s": 2
+     },
+     "timeout_s": 40,
+     "success": {
+      "type": "depth_within",
+      "depth": 1.5,
+      "tolerance_m": 0.4
+     }
+    },
+    {
+     "id": 2,
+     "tool": "navigate_to",
+     "params": {
+      "target": "gate",
+      "pass_through": true
+     },
+     "timeout_s": 120
+    },
+    {
+     "id": 3,
+     "tool": "surface",
+     "timeout_s": 90,
+     "success": {
+      "type": "surfaced"
+     },
+     "on_failure": "abort"
+    }
+   ]
+  }
+ },
+ {
+  "status": "plan",
+  "reason": "",
+  "plan": {
+   "summary": "replayed",
+   "abort_conditions": [
+    {
+     "type": "battery_below",
+     "percent": 20
+    }
+   ],
+   "steps": [
+    {
+     "id": 1,
+     "tool": "navigate_to",
+     "params": {
+      "target": "gate",
+      "pass_through": true
+     },
+     "timeout_s": 120
+    },
+    {
+     "id": 2,
+     "tool": "surface",
+     "timeout_s": 90,
+     "success": {
+      "type": "surfaced"
+     },
+     "on_failure": "abort"
+    }
+   ]
+  }
+ }
+]

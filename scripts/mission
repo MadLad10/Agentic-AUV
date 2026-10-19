@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Convenience wrapper:  scripts/mission [--provider groq] [--dry-run] "pass through the gate then surface"
+# (needs a running sim for execution: scripts/run_sim_test.sh does launch + run + teardown in one go)
+set +u
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/env.sh"
+exec ros2 run auv_mission_planner mission "$@"

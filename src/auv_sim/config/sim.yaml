@@ -1,0 +1,33 @@
+# Parameters for the stand-in sim nodes. Physics constants live in auv_sim/world_gen.py.
+auv_controller:
+  ros__parameters:
+    max_thrust_n: 40.0
+    hard_max_depth_m: 4.6      # backend failsafe (pool is 5 m deep)
+    kp_xy: 30.0
+    kd_xy: 45.0
+    kp_z: 70.0
+    ki_z: 15.0
+    kd_z: 50.0
+    kp_yaw: 8.0
+    kd_yaw: 5.0
+auv_vehicle_server:
+  ros__parameters:
+    max_speed: 0.6             # m/s carrot speed
+    max_yaw_rate: 0.6          # rad/s
+    settle_s: 1.0
+auv_battery:
+  ros__parameters:
+    capacity_wh: 20.0
+    hotel_w: 20.0
+    w_per_newton: 1.2
+auv_detector:
+  ros__parameters:
+    # Config flag for the detection fallback: ground_truth (reliable) | camera (HSV on rendered frames)
+    detection_source: ground_truth
+    hfov_deg: 80.0
+    vfov_deg: 62.0
+    max_range_m: 8.0
+    gate_max_range_m: 14.0
+    p_detect: 0.95
+    range_noise_frac: 0.05
+    bearing_noise_deg: 1.5

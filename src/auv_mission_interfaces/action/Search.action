@@ -1,0 +1,11 @@
+# Run a search pattern until target_class is detected (or the pattern ends).
+string target_class
+string pattern        # yaw_sweep | spiral | lawnmower
+float64 radius_m
+float64 depth
+---
+bool found
+string message
+Detection detection
+---
+float64 progress      # 0..1

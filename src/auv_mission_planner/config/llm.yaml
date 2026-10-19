@@ -1,0 +1,73 @@
+# LLM providers. Switch with `mission --provider <name>` or default_provider.
+# API keys come from .env (see .env.example), never from this file.
+default_provider: ollama
+
+providers:
+  ollama:                       # local, CPU, free
+    type: ollama
+    host_env: AUV_OLLAMA_HOST
+    host: http://127.0.0.1:11437     # v2 auv2-ollama container (scripts/start_ollama.sh)
+    model: qwen2.5:3b-instruct
+    num_ctx: 4096
+    keep_alive: 30m
+    temperature: 0.1
+    seed: 0
+    constrained: true           # pass the plan JSON schema as `format` (grammar-constrained decoding)
+    timeout_s: 300
+    pricing: {input_per_mtok: 0.0, output_per_mtok: 0.0}
+
+  groq:                         # free tier API (OpenAI-compatible); needs GROQ_API_KEY
+    type: openai_compat
+    base_url: https://api.groq.com/openai/v1
+    api_key_env: GROQ_API_KEY
+    model: openai/gpt-oss-120b  # production model on GroqCloud (checked 2026-10-18)
+    json_mode: json_object
+    extra_body: {reasoning_effort: low}
+    temperature: 0.1
+    timeout_s: 90
+    retries: 5                  # free tier rate limits -> 429 + Retry-After
+    pricing:                    # free tier costs nothing; list_* = Groq on-demand price for comparison
+      input_per_mtok: 0.0
+      output_per_mtok: 0.0
+      list_input_per_mtok: 0.15
+      list_output_per_mtok: 0.60
+
+  groq_llama:                   # also production on Groq; list_* = last published price (now "contact sales")
+    type: openai_compat
+    base_url: https://api.groq.com/openai/v1
+    api_key_env: GROQ_API_KEY
+    model: llama-3.3-70b-versatile
+    json_mode: json_object
+    temperature: 0.1
+    timeout_s: 60
+    retries: 5
+    pricing: {input_per_mtok: 0.0, output_per_mtok: 0.0, list_input_per_mtok: 0.59, list_output_per_mtok: 0.79}
+
+  gemini:                       # alternative free tier; needs GEMINI_API_KEY
+    type: openai_compat
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key_env: GEMINI_API_KEY
+    model: gemini-2.5-flash
+    json_mode: json_object
+    temperature: 0.1
+    timeout_s: 60
+    retries: 5
+    pricing: {input_per_mtok: 0.0, output_per_mtok: 0.0, list_input_per_mtok: 0.30, list_output_per_mtok: 2.50}
+
+  openrouter:                   # alternative; free models end in ":free"; needs OPENROUTER_API_KEY
+    type: openai_compat
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY
+    model: meta-llama/llama-3.3-70b-instruct:free
+    json_mode: json_object
+    temperature: 0.1
+    timeout_s: 90
+    retries: 5
+    pricing: {input_per_mtok: 0.0, output_per_mtok: 0.0}
+
+  mock:
+    type: mock
+
+planner:
+  max_format_retries: 2         # re-ask when the output is not valid plan JSON
+  max_validation_retries: 2     # re-ask when the safety validator rejects the plan

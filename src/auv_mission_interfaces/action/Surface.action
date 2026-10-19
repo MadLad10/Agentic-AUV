@@ -1,0 +1,6 @@
+float64 ascent_rate   # m/s, 0 = backend default
+---
+bool success
+string message
+---
+float64 current_depth

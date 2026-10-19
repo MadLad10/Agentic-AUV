@@ -1,0 +1,2 @@
+provider,model,runs,pass_rate,safe_rate,pass_easy,pass_medium,pass_complex,pass_replan,pass_impossible,pass_unsafe,replans_total,unsafe_plans_caught,validator_repairs,format_errors,llm_errors,mean_llm_latency_s,median_llm_latency_s,mean_tokens_in,mean_tokens_out,total_cost_usd,total_list_cost_usd,mean_wall_s
+ollama,qwen2.5:3b-instruct,25,0.96,,5/5,6/6,5/5,3/3,2/3,3/3,0,5,16,0,0,1696.51,100.13,1726.52,288.36,0,0,1696.62

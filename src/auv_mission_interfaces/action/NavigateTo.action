@@ -1,0 +1,14 @@
+# Go to a world-frame point. depth is positive down (metres below surface).
+float64 x
+float64 y
+float64 depth
+float64 yaw
+bool use_yaw          # false = face the direction of travel
+float64 tolerance_m
+float64 max_speed     # m/s, clamped by the backend
+---
+bool success
+string message
+float64 final_error_m
+---
+float64 distance_remaining

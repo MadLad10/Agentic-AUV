@@ -1,0 +1,28 @@
+# secrets
+.env
+# colcon
+build/
+install/
+log/
+# runtime outputs
+traces/*
+!traces/.gitkeep
+runs/
+# eval: keep summary.md / summary.csv / runs.csv / runs.jsonl, drop raw per-run sim outputs
+eval/results/*/raw/
+*.bag
+rosbag*/
+__pycache__/
+*.pyc
+.pytest_cache/
+CLAUDE.md
+# v2
+.venv/
+data/synthetic/
+data/models/*.pt
+runs_yolo/
+*.sqlite
+*.sqlite-*
+data/models/*.log
+eval/results/*/eval.log
+eval/results/*/traces/
