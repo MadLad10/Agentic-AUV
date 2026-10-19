@@ -1,0 +1,69 @@
+# Onboard (vehicle-side, deterministic) software configuration for the MuJoCo backend.
+backend:
+  nav_source: ekf              # ekf | ground_truth (ablation: perfect navigation)
+  detection_source: ground_truth   # ground_truth | yolo | hsv
+  health_monitor: true         # v2 health & safety layer (veto + thruster re-allocation); false = v1 behaviour
+  max_rtf: 15.0                # cap on sim speed during actions (bounds wall-clock watchdog latency)
+  idle_rtf: 1.0                # sim keeps running at this rate between actions (agents thinking)
+  perception_hz: 5.0
+  health_hz: 2.0
+
+controller:
+  kp_xy: 30.0
+  kd_xy: 45.0
+  kp_z: 70.0
+  ki_z: 15.0
+  kd_z: 50.0
+  kp_yaw: 8.0
+  kd_yaw: 5.0
+  hard_max_depth_m: 4.6        # failsafe, independent of the planner (pool is 5 m deep)
+  surface_thrust_n: 15.0
+
+guidance:                      # port of v1's vehicle_server behaviours
+  max_speed: 0.6               # m/s carrot speed
+  max_yaw_rate: 0.6            # rad/s
+  max_vertical_speed: 0.3      # m/s
+  settle_s: 1.0
+  carrot_lead_m: 1.5
+  turn_first_deg: 45.0
+  surface_stall_s: 4.0         # no ascent progress -> stalled (something overhead)
+  surface_clear_m: 1.5         # horizontal move to get clear before retrying
+  surface_confirm_s: 2.5      # stay above 0.2 m this long before reporting surfaced
+  blind_surface_s: 30.0        # ascent time when the depth sensor is untrusted (>= 5 m / 0.3 m/s + margin)
+  fence_margin_m: 0.8
+  degraded_speed_factor: 0.5   # speed scale in degraded navigation (e.g. DVL dropout)
+
+ekf:
+  initial_std: {pos: 0.1, vel: 0.05, yaw_deg: 2.0, gyro_bias: 0.002}
+  process_noise: {accel: 0.08, gyro: 0.004, gyro_bias_walk: 0.0001}
+  meas_noise: {dvl_vel: 0.02, depth: 0.01, compass_deg: 2.0}
+  landmarks:
+    gate_prior: true           # the gate's pose comes from the course map (as teams get it)
+    prior_std_m: 0.15          # error of that map position
+    camera_range_std_frac: 0.08
+    camera_bearing_std_deg: 2.0
+
+perception:                    # camera-model detector (ground_truth source) parameters
+  max_range_m: 8.0
+  gate_max_range_m: 14.0
+  visibility_factor: 0.9       # objects visible to ~0.9 x visibility range (buoys)
+  gate_visibility_factor: 1.5  # large gate is visible further
+  p_detect: 0.95
+  range_noise_frac: 0.05
+  bearing_noise_deg: 1.5
+  blind_classes: []            # eval: classes the camera detector never reports (v1 mission R3)
+
+health:
+  dvl_timeout_s: 2.0
+  thruster_min_cmd_n: 4.0
+  thruster_dead_current_a: 0.15
+  thruster_dead_window_s: 1.0
+  pressure_stuck_window_s: 3.0
+  compass_reject_ratio: 0.6
+  gyro_bias_limit: 0.008       # rad/s, |estimated bias| above this -> imu_bias
+  battery_drop_pct: 10.0       # drop within battery_drop_window_s -> battery_drop
+  battery_drop_window_s: 5.0
+  camera_dark_mean: 6.0        # mean intensity below this -> camera blackout
+  camera_low_vis_dev: 6.5      # mean |pixel - water colour| below this ... (clear water >= 9.2 measured)
+  camera_low_vis_frames: 3     # ... for this many consecutive 1 Hz frames -> low visibility (turbidity)
+  veto_battery_pct: 12.0       # absolute floor: veto everything and surface
