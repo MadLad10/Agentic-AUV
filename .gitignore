@@ -41,3 +41,6 @@ data/**
 eval/results/*.log
 eval/results/*/run.log
 eval/results/*/DONE
+
+# local system monitor (scripts/sysmon.py)
+logs/

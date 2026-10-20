@@ -11,6 +11,13 @@ runs.jsonl so `--resume` continues an interrupted evaluation. Scoring reuses v1'
 
   setsid nohup python eval/run_eval_v2.py --systems v1,v2 --sets nominal,faults --provider ollama \\
       --out eval/results/v2_ollama --resume > eval/results/v2_ollama.log 2>&1 &
+
+Repeats and ablations (PLAN.md §8): `--seed N` sets the simulator seed and the LLM sampling seed;
+`--ablation` switches one component off for this evaluation only (the switch exists only here, never in
+the vehicle, MCP server or dashboard):
+  no_validator  plans get the schema check only: no rule checks, repairs or runtime prechecks
+  no_health     no health monitor: no veto, fault detection or thrust re-allocation
+  no_fusion     plain EKF (no sonar walls, learned velocity, current estimate) and no camera-sonar tracker
 """
 from __future__ import annotations
 
@@ -26,6 +33,35 @@ import time
 WS = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 SETS = {'nominal': os.path.join(WS, 'eval', 'missions.yaml'), 'faults': os.path.join(WS, 'eval', 'faults.yaml')}
 MOTION = {'navigate_to', 'search_pattern', 'hold_depth'}
+ABLATIONS = ('none', 'no_validator', 'no_health', 'no_fusion')
+
+
+class PassThroughValidator:
+    """`no_validator` ablation: accept every schema-valid plan unchanged and never block a step."""
+
+    def validate(self, plan, prompt=None):
+        from auv_mission_planner.validator import ValidationReport
+        return ValidationReport(ok=plan is not None and bool(plan.steps), plan=plan)
+
+    def precheck_step(self, *a, **kw):
+        return None
+
+
+def ablation_overrides(ablation: str) -> dict:
+    if ablation == 'no_health':
+        return {'backend': {'health_monitor': False}}
+    if ablation == 'no_fusion':
+        return {'ekf': {'sonar_walls': {'enabled': False},
+                        'learned_velocity': {'enabled': False, 'current_estimation': False}},
+                'tracking': {'enabled': False}}
+    return {}
+
+
+def deep_merge(a: dict, b: dict) -> dict:
+    out = dict(a)
+    for k, v in b.items():
+        out[k] = deep_merge(out[k], v) if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+    return out
 
 
 def v1_eval():
@@ -50,17 +86,20 @@ def run_one(spec: dict) -> dict:
     from auv_mission_planner.llm.providers import make_provider
     from auv_onboard.factory import make_backend
     m, system = spec['mission'], spec['system']
+    seed, ablation = int(spec.get('seed', 0)), spec.get('ablation', 'none')
     onboard = {'backend': {'health_monitor': system == 'v2', 'nav_source': 'ekf',
                            'max_rtf': spec.get('max_rtf', 20.0), 'idle_rtf': 1.0},
                'perception': {'blind_classes': [c.strip() for c in str(m.get('blind_classes', '')).split(',') if c.strip()]}}
+    onboard = deep_merge(onboard, ablation_overrides(ablation))
     sim_over = {'sensors': {'battery': {'initial_percent': float(m['battery_start'])}}} if m.get('battery_start') else None
-    be = make_backend(m.get('arena', 'default'), faults=m.get('faults', []), seed=spec.get('seed', 0),
+    be = make_backend(m.get('arena', 'default'), faults=m.get('faults', []), seed=seed,
                       onboard_overrides=onboard, sim_overrides=sim_over)
     cfg, llm_cfg = load_config(), load_llm_config()
+    llm_cfg['providers'][spec['provider']]['seed'] = seed          # LLM sampling seed (used by ollama)
     provider = make_provider(llm_cfg, spec['provider'])
     t0 = time.time()
     row = {'system': system, 'mission': m['id'], 'tier': m['tier'], 'set': m['set'], 'provider': spec['provider'],
-           'model': provider.model}
+           'model': provider.model, 'seed': seed, 'ablation': ablation}
     try:
         if system == 'v1':
             from auv_mission_planner.mission import MissionRunner
@@ -83,6 +122,8 @@ def run_one(spec: dict) -> dict:
             acfg = load_agents_config()
             diag = make_provider(llm_cfg, spec['provider'])
             rt = build_runtime(be, provider, acfg, diag, make_vlm(acfg['perception']['vlm']), auto_approve=True)
+            if ablation == 'no_validator':
+                rt.validator = rt.executor.validator = PassThroughValidator()
             res = run_mission(rt, m['prompt'])
             st = res.get('stats') or {}
             calls = rt.llm_calls + [c for c in rt.diagnostics.calls if c.get('usage')]
@@ -216,6 +257,8 @@ def main():
     ap.add_argument('--timeout', type=int, default=1200, help='wall seconds per run')
     ap.add_argument('--max-rtf', type=float, default=20.0)
     ap.add_argument('--summary-only', action='store_true')
+    ap.add_argument('--seed', type=int, default=0, help='simulator + LLM sampling seed')
+    ap.add_argument('--ablation', default='none', choices=ABLATIONS)
     a = ap.parse_args()
     if a.one:
         print('RESULT ' + json.dumps(run_one(json.loads(a.one)), default=str), flush=True)
@@ -242,7 +285,8 @@ def main():
             for system in a.systems.split(','):
                 if (system, m['id']) in done:
                     continue
-                spec = {'system': system, 'mission': m, 'provider': a.provider, 'out': a.out, 'max_rtf': a.max_rtf}
+                spec = {'system': system, 'mission': m, 'provider': a.provider, 'out': a.out, 'max_rtf': a.max_rtf,
+                        'seed': a.seed, 'ablation': a.ablation}
                 t0 = time.time()
                 print(f'[eval] {system} {m["id"]}: {m["prompt"]}', flush=True)
                 try:
@@ -255,6 +299,8 @@ def main():
                 except subprocess.TimeoutExpired:
                     row = {'system': system, 'mission': m['id'], 'tier': m['tier'], 'set': m['set'],
                            'provider': a.provider, 'outcome': 'error', 'reason': f'run timed out after {a.timeout}s'}
+                row.setdefault('seed', a.seed)
+                row.setdefault('ablation', a.ablation)
                 row.update(score(row, m, limits, v1))
                 with open(path, 'a') as f:
                     f.write(json.dumps(row, default=str) + '\n')
