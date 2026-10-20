@@ -72,7 +72,9 @@ def run(cond, tracking, seed):
             time.sleep(0.05)
         r = be.sim.referee.report()
         faults = sorted({f['type'] for rep in be.health_log for f in rep.faults})
-        wrong = [b for b in r['touch_order'] if b not in ('red_buoy', 'green_buoy')] if cond != 'false_target_gate' else []
+        allowed = {'turbidity_touch_red': {'red_buoy'}, 'false_target_gate': set(),
+                   'nominal_gate_red_green': {'red_buoy', 'green_buoy'}}[cond]
+        wrong = [b for b in r['touch_order'] if b not in allowed]      # any buoy the task did not ask for
         return {'condition': cond, 'tracking': tracking, 'seed': seed, 'outcome': res.get('outcome'),
                 'task': bool(c['task'](r)), 'wrong_touch': wrong, 'surfaced': r['surfaced_at_end'],
                 'collisions': r['collisions'], 'sim_s': r['sim_time_s'], 'wall_s': round(time.time() - t0, 1),

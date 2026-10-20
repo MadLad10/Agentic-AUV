@@ -1,0 +1,4 @@
+base_commit: 482dcf3
+uncommitted_src_diff_sha1: 12f5d9790805
+started: 2026-10-20T14:23:52+06:00
+note: code frozen for this run; LLM qwen2.5:3b-instruct, VLM moondream (one model in memory at a time), machine shared with YOLO training

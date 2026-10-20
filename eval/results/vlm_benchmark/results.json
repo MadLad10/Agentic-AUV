@@ -1,0 +1,917 @@
+{
+ "summary": {
+  "model": "moondream",
+  "frames": {
+   "clear": 40,
+   "murky": 10,
+   "black": 10
+  },
+  "vlm_objects": {
+   "gate": {
+    "precision": 0.333,
+    "recall": 0.545,
+    "support": 11
+   },
+   "red_buoy": {
+    "precision": 1.0,
+    "recall": 0.667,
+    "support": 6
+   },
+   "green_buoy": {
+    "precision": 0.467,
+    "recall": 1.0,
+    "support": 7
+   },
+   "yellow_buoy": {
+    "precision": 0.4,
+    "recall": 0.222,
+    "support": 9
+   }
+  },
+  "yolo_objects": {
+   "gate": {
+    "precision": 0.9,
+    "recall": 0.818,
+    "support": 11
+   },
+   "red_buoy": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "support": 6
+   },
+   "green_buoy": {
+    "precision": 0.75,
+    "recall": 0.857,
+    "support": 7
+   },
+   "yellow_buoy": {
+    "precision": 0.889,
+    "recall": 0.889,
+    "support": 9
+   }
+  },
+  "blackout_detection": {
+   "black_frames_called_dark": 1,
+   "normal_frames_called_dark": 0.5
+  },
+  "vlm_empty_answers": 33,
+  "latency_s": {
+   "median": 2.19,
+   "p90": 15.04,
+   "mean": 5.87,
+   "calls": 180
+  }
+ },
+ "rows": [
+  {
+   "i": 0,
+   "condition": "clear",
+   "truth": [
+    "red_buoy"
+   ],
+   "vlm": [
+    "red_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a single red ball floating in space.",
+    "objects": "In the image, there is a small red balloon floating in the sky. The balloon appears to be the main focus of the scene and stands out against the blue background.",
+    "describe": "The image depicts a serene scene of a lone red balloon floating in the sky against a backdrop of a deep blue color, possibly an ocean or a vast expanse of water. The balloon is positioned centrally within the frame and appears to be floating towards the right side of the image."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 1,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a blue sky with no clouds. The sky appears to be empty and has a dark color, giving it an ominous or foreboding feel. There are no people or vehicles visible in the scene, which adds to the sense of emptiness.",
+    "describe": "The image presents a serene scene of a long, straight road stretching into the distance under a clear blue sky. The road is devoid of any vehicles or people, giving it an almost empty and tranquil atmosphere. The perspective of the photo is taken from above, providing a bird's eye view of this expansive landscape."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 2,
+   "condition": "clear",
+   "truth": [
+    "red_buoy"
+   ],
+   "vlm": [
+    "gate",
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a group of three green balls floating on top of a blue surface.",
+    "objects": "In the image, there is a blue sky with white clouds. The scene features two poles standing on either side of a road or path that runs through it.",
+    "describe": "The image presents a scene of two poles standing in the middle of an empty, dark blue ocean. The poles are positioned at different angles and heights, creating a sense of depth within the frame. The background is dominated by the vast expanse of the ocean, which stretches out to meet the horizon line on the right side of the image. The sky above mirrors the ocean's deep blue hue, further enhancing the overall darkness of the scene."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 3,
+   "condition": "clear",
+   "truth": [
+    "green_buoy"
+   ],
+   "vlm": [
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a green ball floating in space.",
+    "objects": "In the image, there is a green ball floating in space. The ball appears to be alone and stationary, with no other objects or people around it.",
+    "describe": "The image presents a room with a green wall and a blue floor, creating an interesting contrast of colors. In the center of the room is a small green ball floating in mid-air, appearing to be defying gravity due to its position relative to the walls. The ball's location is slightly off-center to the right side of the image, drawing attention to it as the focal point."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 4,
+   "condition": "clear",
+   "truth": [
+    "yellow_buoy"
+   ],
+   "vlm": [
+    "gate",
+    "yellow_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a single yellow ball floating in space.",
+    "objects": "The image features a yellow balloon floating on top of a black pole. The balloon is the main focus, with its bright color standing out against the dark background.",
+    "describe": "The image presents a large yellow balloon floating in the air against a dark blue background, with no other objects or people visible. The balloon is positioned on the right side of the frame and appears to be floating freely without any attachment points."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 5,
+   "condition": "clear",
+   "truth": [
+    "red_buoy"
+   ],
+   "vlm": [
+    "gate",
+    "red_buoy"
+   ],
+   "answers": {
+    "colours": "The image features a blue sky with white clouds, and there is one red ball.",
+    "objects": "In the image, there is a road with a red line on it. The road appears to be empty and stretches across the entire frame of the photo. There are no other visible objects or people in the scene.",
+    "describe": "The image presents a 3D rendering of an underwater scene, with the viewer's perspective from above. The predominant color scheme is blue and green, creating a serene atmosphere. A red object stands out in the center of the frame, drawing attention to its presence amidst the vast expanse of water surrounding it. The depth of field is shallow, focusing on the foreground while blurring the background into a gradient of blue tones that extends towards the horizon line."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 6,
+   "condition": "clear",
+   "truth": [
+    "gate",
+    "green_buoy"
+   ],
+   "vlm": [
+    "gate",
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "The balls in this image are green and white.",
+    "objects": "In the image, there is a large room with blue walls and a white floor. A pole stands on one side of the room, while two green circles are placed at different positions within the room. The scene appears to be a 3D rendering or computer-generated image that creates an illusion of depth and perspective.",
+    "describe": "The image presents a 3D rendering of an underwater scene, with the viewer's perspective from below looking up towards the sky. The water is a dark blue color, and there are three green circles floating in the center of the frame. A yellow pole stands on the right side of the image, adding depth to the scene."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 7,
+   "condition": "clear",
+   "truth": [
+    "gate"
+   ],
+   "vlm": [
+    "gate",
+    "yellow_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a single yellow ball.",
+    "objects": "In the image, there is a single yellow pole standing alone against a dark green background. The pole appears to be empty and does not have any other objects or people around it.",
+    "describe": "The image depicts a solitary yellow pole standing in the center of an expansive, dark green landscape. The pole is positioned on the left side of the frame and extends upwards towards the sky, creating a sense of verticality against the backdrop of the vast expanse of water below. The scene conveys a feeling of solitude and tranquility, with no other objects or people present in the image."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 8,
+   "condition": "clear",
+   "truth": [
+    "gate"
+   ],
+   "vlm": [],
+   "answers": {
+    "colours": "The image features a blue sky with white clouds, and there is no visible color for the balls.",
+    "objects": "In the image, there is a blue-painted room with a white door and window. The room appears to be empty of people or any other visible objects.",
+    "describe": "The image presents a scene of an empty swimming pool, with the water appearing to be blue and reflecting the light in a way that makes it seem like there are no people in the pool area. The pool is surrounded by a concrete wall on one side, creating a sense of enclosure. On the other side of the pool, there's a white door or gate, which appears to be closed."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 9,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a blue background with white lines on it. The background appears to be a flat surface or wall, and it has a slightly glossy finish that reflects light. There are no other objects present in the image besides the blue background and the white lines.",
+    "describe": "The image shows a close-up view of a blue fabric with a subtle gray border, giving it an antique appearance. The fabric appears to be made from cotton or linen and has a slightly wrinkled texture. The background is a light blue color that complements the fabric's hue, creating a harmonious color scheme."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 10,
+   "condition": "clear",
+   "truth": [
+    "red_buoy"
+   ],
+   "vlm": [
+    "red_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a single red ball floating in space.",
+    "objects": "In the image, there is a red dot floating in the center of an empty room. The room appears to be a large, open space with blue walls and a gray floor. There is no visible text or other objects present in the scene.",
+    "describe": "The image presents a digital illustration of an empty room with a blue wall and a green floor, creating a sense of tranquility. A red dot is the only object in the room, standing out against the monochromatic color scheme. The room appears to be devoid of any furniture or other objects, emphasizing its emptiness."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 11,
+   "condition": "clear",
+   "truth": [
+    "yellow_buoy"
+   ],
+   "vlm": [
+    "gate",
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a green ball floating in space.",
+    "objects": "In the image, there is a green ball floating in space. The ball appears to be stationary and is located at the center of the frame.",
+    "describe": "The image presents a room with a blue wall and a white ceiling, creating an interesting contrast between the two colors. A green ball is suspended in mid-air, positioned centrally within the frame of the image. The ball appears to be floating or hovering above the floor, adding a sense of motion to the scene."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 12,
+   "condition": "clear",
+   "truth": [
+    "gate"
+   ],
+   "vlm": [
+    "gate",
+    "yellow_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a single yellow ball floating above an empty room.",
+    "objects": "In the image, there is a long pole or stick that appears to be suspended from the ceiling. The pole extends horizontally across the frame of the picture and is positioned near the center.",
+    "describe": "The image presents a room with blue walls and a wooden beam hanging from the ceiling, creating an interesting visual effect. The beam is positioned at the top left corner of the frame, while the floor extends towards the bottom right corner. The room appears to be empty, with no visible objects or people in the scene."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 13,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a blue square or rectangle with a gradient background. The background appears to be a light blue color, which contrasts with the darker blue foreground area. There are no other objects present in the image besides the blue square and its background.",
+    "describe": "The image shows a close-up view of a blue fabric with a subtle grayish tint, likely due to the use of a fabric dyes or treatments. The fabric appears to be made from cotton and has a slightly wrinkled texture. The background is blurred, drawing focus to the fabric's color and texture."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 14,
+   "condition": "clear",
+   "truth": [
+    "yellow_buoy"
+   ],
+   "vlm": [
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a single green ball.",
+    "objects": "In the image, there is a green ball and a stick. The ball appears to be floating or stuck on top of the stick, creating an interesting visual effect against the backdrop of the blue sky.",
+    "describe": "The image presents a digital illustration of a green balloon floating in the air, positioned on the right side and slightly tilted to the left. The background is a light blue color with a darker shade at the top center, creating an interesting contrast that makes the balloon stand out."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 15,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "The image features a blue background with white lines, and there is no visible content of balls.",
+    "objects": "In the image, there is a large blue wall or surface that appears to be empty. The wall has a gradient effect with some darker areas and lighter ones, giving it an artistic appearance. There are no people or other objects visible on the wall, making it appear serene and minimalistic.",
+    "describe": "The image presents a digital illustration of an empty room with a large blue wall dominating the scene. The room is devoid of any objects or text, creating a sense of emptiness and tranquility. The walls are painted in a light blue color that contrasts with the darker blue floor beneath them. The room appears to be a minimalist space, with no furniture or decorations visible."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 16,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a square-shaped object with blue and green colors. The background of the image is dark blue or teal, which contrasts with the light blue color on the front side of the object.",
+    "describe": "The image presents a striking contrast of colors, with two vertical strips of fabric in the same shade of blue dominating the scene. The left strip is slightly darker than the right one, creating an interesting visual effect. The background features a light gray color that complements the blue tones on the fabrics."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 17,
+   "condition": "clear",
+   "truth": [
+    "yellow_buoy"
+   ],
+   "vlm": [
+    "gate",
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a single green ball floating in space.",
+    "objects": "In the image, there is a green ball floating in space. The ball appears to be stationary and is located towards the center of the frame.",
+    "describe": "The image presents a room with a green ball floating in the center, surrounded by an empty blue-green space. The room appears to be devoid of any furniture or objects, creating a sense of openness and tranquility."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 18,
+   "condition": "clear",
+   "truth": [
+    "green_buoy",
+    "red_buoy"
+   ],
+   "vlm": [
+    "gate",
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "The image features two green balls floating in a blue ocean.",
+    "objects": "In the image, there is a green ball and two poles standing on either side of a road. The pole on the left has a red light at its top, while the pole on the right also has a red light. These lights appear to be glowing or illuminated against the dark background, creating an interesting visual effect in the scene.",
+    "describe": "The image presents a 3D rendering of an underwater scene with a road running through it, featuring two green traffic lights positioned at the center and flanked by two red poles on either side. The sky above is dark blue, creating a stark contrast to the water below."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 19,
+   "condition": "clear",
+   "truth": [
+    "gate"
+   ],
+   "vlm": [
+    "gate"
+   ],
+   "answers": {
+    "colours": "The image features a 3D rendering of a yellow pole with a black roof, which is located at the center. There are no other objects or elements visible in the image.",
+    "objects": "The image features a large, yellow gate with two vertical bars on either side. The gate is situated in the middle of an indoor room and appears to be empty or devoid of any people or objects.",
+    "describe": "The image presents a 3D rendering of an underwater scene, with the main focus being a yellow rectangular structure positioned centrally in the frame. The structure is surrounded by water and appears to be floating on the surface. A small black line can be seen extending from the center towards the right side of the image."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 20,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "The image shows a blue background with two green dots on it. The dots appear to be floating or hovering, creating an interesting visual effect against the blue backdrop.",
+    "describe": "The image shows a close-up view of a blue surface, possibly a wall or a window. The color of the surface is predominantly blue with some gray elements present in the background. There are two small green dots located at the center of the image, which appear to be floating or hovering above the surface."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 21,
+   "condition": "clear",
+   "truth": [
+    "yellow_buoy"
+   ],
+   "vlm": [
+    "gate",
+    "yellow_buoy"
+   ],
+   "answers": {
+    "colours": "The image features a single yellow ball.",
+    "objects": "In the image, there is a green ball sitting on top of a pole. The pole appears to be made of wood and is located in the center of the scene.",
+    "describe": "The image presents a 3D rendering of an indoor setting with a green wall and a blue floor, creating a serene atmosphere. In the center of the room is a yellow balloon floating in the air, adding a pop of color to the scene. The balloon appears to be stationary on its stand, which is located near the bottom right corner of the image."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 22,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "The image features a blue background with a white border. There is no text or other discernible objects present, and the focus of the image is on the color contrast between the blue background and the white border.",
+    "describe": "The image presents a digital illustration of a blue square, slightly tilted to the right and filled with a gradient effect that transitions from light blue at the top to darker blue towards the bottom. The background is a solid gray color, providing a contrast to the vibrant blue square in the foreground."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 23,
+   "condition": "clear",
+   "truth": [
+    "gate",
+    "green_buoy",
+    "yellow_buoy"
+   ],
+   "vlm": [
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "The balls in this image are green.",
+    "objects": "The image features two green balloons floating in the air, positioned close to each other.",
+    "describe": "The image presents a scene of two green balloons floating in the air, positioned at different heights and distances from each other. The background is a dark blue color with white lines that create an abstract pattern."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 24,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a blue square or rectangle with a gray border. The background of the image appears to be a light color, possibly white or gray.",
+    "describe": "The image shows a close-up view of a blue fabric with a subtle gray border, creating a striking contrast between the two colors. The fabric appears to be made from a material that is not visible in the image but could potentially be cotton or linen. The background is blurred and out of focus, drawing attention to the vibrant blue fabric as the main subject of the photograph."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 25,
+   "condition": "clear",
+   "truth": [
+    "gate",
+    "yellow_buoy"
+   ],
+   "vlm": [
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a green ball floating above an indoor pool.",
+    "objects": "In the image, there is a green ball floating in the air. The ball appears to be stationary and is located above a tennis court or pool area with blue walls.",
+    "describe": "The image presents a digital rendering of an indoor pool area with blue walls and a white floor, creating a serene atmosphere. A green tennis ball is suspended in the air above the pool's surface, adding a dynamic element to the scene. The perspective suggests that the viewer is looking down into the pool from its edge, providing a sense of depth and immersion."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 26,
+   "condition": "clear",
+   "truth": [
+    "gate",
+    "green_buoy"
+   ],
+   "vlm": [
+    "gate",
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "The balls in this image are green.",
+    "objects": "In the image, there is a green ball on top of a black pole. The ball appears to be floating or stuck in mid-air due to its position relative to the ground and the pole's height above it.",
+    "describe": "The image presents a 3D rendering of an indoor setting with a large green ball suspended in the center, standing on a black pole that extends into the distance. The background is a dark blue color, providing a stark contrast to the vibrant green ball and the black pole. In the top right corner, there's a yellow bar structure, adding another element of interest to the scene."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 27,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a blue background with two green circles on it. The circles appear to be floating or hovering above the surface of the water.",
+    "describe": "The image shows a close-up view of a blue wall, which appears to be wet or damp due to the presence of water droplets on its surface. The color and texture of the wall create an interesting visual effect that contrasts with the surrounding environment."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 28,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a blue square or rectangle with a small dot on it. The background of the image appears to be a light color, possibly grayish-blue.",
+    "describe": "The image shows a close-up view of a blue surface with a small circular hole in the center, creating a sense of depth and dimension. The background is a light beige color that contrasts with the dark blue hue of the surface."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 29,
+   "condition": "clear",
+   "truth": [
+    "gate"
+   ],
+   "vlm": [
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "The balls in this image are green.",
+    "objects": "The image features a large blue room with an empty pool. There is no one or any visible activity within the room, giving it a sense of emptiness and tranquility. The pool itself appears to be empty as well, adding to the overall calm atmosphere of the scene.",
+    "describe": "The image presents a 3D rendering of an indoor swimming pool, with the pool's interior illuminated by blue light and featuring a white floor that reflects the light. The pool is surrounded by a yellow railing on one side, creating a sense of depth in the scene. In the background, there are two green balls floating near the bottom left corner of the image, adding an element of playfulness to the otherwise tranquil setting.\n\nThe perspective of the image is from above, providing a bird's eye view of the pool and its surroundings. The blue sky visible through the window in the top right"
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 30,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a large blue square or rectangle with a green dot on it. The background of the image appears to be dark and has a gradient effect, giving it a more artistic appearance.",
+    "describe": "The image shows a close-up view of a blue wall with a small green dot in the center, creating an interesting contrast between the two colors. The background is dark and out of focus, drawing attention to the vibrant blue wall and its focal point."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 31,
+   "condition": "clear",
+   "truth": [
+    "gate"
+   ],
+   "vlm": [
+    "gate"
+   ],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a large blue-green room with an open doorway. The room appears to be empty and has no visible furniture or other objects inside it.",
+    "describe": "The image presents a 3D rendering of an underwater scene, with the viewer's perspective from above. The background is a deep blue color that fills most of the frame, creating a sense of depth and distance. In the center of the image, there is a small archway or doorway, which appears to be made of wood and has a yellow handle on top. The archway is situated in the middle of the scene, drawing the viewer's attention towards it."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 32,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a large blue wall that appears to be empty. The wall has a unique design with vertical lines running across it, giving it an interesting and modern look.",
+    "describe": "The image presents a 3D rendering of an empty room with blue walls and a gray floor, creating a stark contrast between the two colors. The perspective is from the side of the room, looking towards the center, giving the impression that one is standing in the middle of the space. There are no visible texts or other objects within the image, focusing solely on the architectural elements of the room."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 33,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "The image shows a room with a green wall and a blue floor. There is an object floating on the surface of the water, which appears to be a tennis ball or a small toy boat. The room has a flat ceiling that extends throughout the space, giving it a spacious feel.",
+    "describe": "The image presents a 3D rendering of an indoor swimming pool, with the walls and floor painted in a light blue color that reflects off the water surface to create a serene atmosphere. The pool is filled with water, which appears to be greenish-blue due to the lighting conditions. A small green ball is floating near the center of the image, adding a touch of realism to the scene."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 34,
+   "condition": "clear",
+   "truth": [
+    "red_buoy"
+   ],
+   "vlm": [
+    "red_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a single red ball floating above an empty room. The room appears to be dark and has no other objects or people visible.",
+    "objects": "In the image, there is a red balloon floating in front of a blue sky. The balloon stands out against the dark background and draws attention to itself as the main focus of the scene.",
+    "describe": "The image depicts a room with blue walls and a red ball floating in the center, surrounded by three green lights on either side of it. The room appears to be empty, creating an atmosphere of solitude or tranquility."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 35,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a blue wall with a white border. The wall appears to be made of a material that resembles stone or concrete and has a rough texture. It is situated next to a window on one side of the room.",
+    "describe": "The image shows a close-up view of a blue wall, which appears to be made of a material that resembles stone or concrete. The wall is not perfectly smooth and has some texture, giving it an interesting visual effect. The color of the wall is predominantly blue, with a few gray areas scattered throughout, adding depth and contrast to the scene.\n\nThe image does not contain any discernible text or other objects, making it a simple and uncluttered composition focused solely on the blue wall."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 36,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a wall with a blue and gray color scheme. The wall appears to be made of drywall or plasterboard, as it has a smooth texture without any visible layers underneath.",
+    "describe": "The image shows a close-up view of a wall painted in a teal color, with a darker shade on the right side and a lighter shade on the left side. The wall appears to be made of a material that is not visible in the photo but could be wood or plasterboard."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 37,
+   "condition": "clear",
+   "truth": [
+    "green_buoy",
+    "yellow_buoy"
+   ],
+   "vlm": [
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "The balls in this image are green.",
+    "objects": "In the image, there is a group of green balloons floating in the air.",
+    "describe": "The image presents a digital illustration of two green balloons floating in the sky, positioned at different heights and angles. The background is a dark blue color with white lines that create an abstract pattern across it."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 38,
+   "condition": "clear",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a blue wall with a white stripe running across it. The wall has a gradient effect from light to dark blue and appears to be made of a material that resembles stone or concrete.",
+    "describe": "The image presents a close-up view of a wall, with the top half being a darker shade of blue and the bottom half being a lighter shade of gray. The wall is composed of vertical lines that create a sense of depth and dimension to the scene."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 39,
+   "condition": "clear",
+   "truth": [
+    "green_buoy",
+    "yellow_buoy"
+   ],
+   "vlm": [
+    "gate",
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "The balls in this image are green.",
+    "objects": "In the image, there is a green balloon floating in front of a dark room. The balloon appears to be floating alone and is positioned towards the center of the frame.",
+    "describe": "The image presents a 3D rendering of an indoor setting with a blue floor and walls, creating the impression that one is underwater or in a cave-like environment. A green pole stands on the right side of the frame, holding two balloons attached to it. The balloons are floating at different heights, adding a sense of depth and perspective to the scene."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 40,
+   "condition": "murky",
+   "truth": [],
+   "vlm": [
+    "gate"
+   ],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a square-shaped object with a dark blue color. The object has a gray border around it and appears to be made of a shiny material. It is positioned centrally within the frame, drawing attention to its unique design and contrasting colors.",
+    "describe": "The image shows a square-shaped object with a dark blue hue, possibly a fabric or a piece of paper. The background is a light gray color that contrasts with the dark blue surface. There are no discernible texts or other objects in the image, and it appears to be a static, two-dimensional scene."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 41,
+   "condition": "murky",
+   "truth": [],
+   "vlm": [
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "The balls in this image are green.",
+    "objects": "In the image, there is a blue square with a small green circle on it. The background of the image is also blue and has a gray border around it.",
+    "describe": "The image presents a close-up view of a blue square, with a small green circle in the center that appears to be floating or hovering above it. The background is a solid shade of blue, providing a contrast to the vibrant colors of the circle and the square."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 42,
+   "condition": "murky",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a square-shaped object with blue and gray colors. The object appears to be made of plastic or a similar material, as it has a smooth texture. It is not attached to any other objects or surfaces, making it stand out against its surroundings.",
+    "describe": "The image shows a square-shaped object with a dark blue background, giving it an industrial or metallic appearance. The object is positioned centrally in the frame and has a rough texture that suggests it might be made of metal or have some sort of textured surface."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 43,
+   "condition": "murky",
+   "truth": [
+    "gate"
+   ],
+   "vlm": [
+    "yellow_buoy"
+   ],
+   "answers": {
+    "colours": "In the image, there is a single yellow ball floating on top of a blue surface.",
+    "objects": "The image features a long yellow pencil standing upright on its end, positioned against a dark blue background.",
+    "describe": "The image presents a single yellow pencil standing upright on its end against a dark blue background, which appears to be water or a liquid-like substance. The pencil's position and the surrounding darkness create an interesting contrast that draws attention to the solitary object in the scene."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 44,
+   "condition": "murky",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a blue square with a small white circle on it. The background of the image is dark blue, and the entire scene appears to be a computer-generated image or a digital art piece.",
+    "describe": "The image shows a close-up view of the sky, which is painted in a dark blue color with a few white clouds scattered throughout. The perspective is from below, looking up at the sky, giving an impression of being high above the earth. There are no discernible texts or other objects present in the image."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 45,
+   "condition": "murky",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a square-shaped object with a dark green color. The object appears to be made of fabric or material and has a textured surface.",
+    "describe": "The image shows a square-shaped fabric with a dark green hue, likely made of cotton or linen. The fabric has a slightly wrinkled texture and appears to be in good condition. It is displayed on a gray background, which contrasts nicely with the dark green color of the fabric."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 46,
+   "condition": "murky",
+   "truth": [],
+   "vlm": [
+    "green_buoy"
+   ],
+   "answers": {
+    "colours": "The balls in this image are green and white.",
+    "objects": "In the image, there is a blue square with a green dot inside it. The background of the image appears to be a dark blue color.",
+    "describe": "The image shows a close-up view of a blue square with a green circle in the center, creating an interesting contrast between the two colors. The background is a solid light blue color that fills most of the frame, providing a neutral backdrop for the vibrant colors of the circle and the square."
+   },
+   "condition_pred": "not_black"
+  },
+  {
+   "i": 47,
+   "condition": "murky",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a square-shaped object with a blue background. The object appears to be made of plastic or a similar material and has a gray border around it.",
+    "describe": "The image shows a square-shaped object with a dark blue background, giving it an industrial or metallic appearance. The color of the object is predominantly dark blue, which contrasts with the light gray border surrounding it. The border appears to be made of metal, adding a modern and sleek touch to the overall design."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 48,
+   "condition": "murky",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a square-shaped object with a green background. The object appears to be made of plastic and has a gray border around it.",
+    "describe": "The image shows a square-shaped piece of fabric with a dark green hue, likely made from a material like cotton or linen. The fabric has a slightly wrinkled texture and is displayed against a gray background."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 49,
+   "condition": "murky",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a square-shaped object with a blue background. The object has a gray border around it and appears to be made of a material that could be described as either plastic or fabric-like.",
+    "describe": "The image shows a square-shaped fabric with a dark blue hue, likely made of a material like cotton or linen. The fabric has a slightly wrinkled texture and is set against a gray background."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 50,
+   "condition": "black",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a black square with a gray border. The square has no visible text or other objects inside it. It appears to be a simple and minimalistic design that focuses on its shape and color contrast.",
+    "describe": "The image shows a square-shaped black and white photo with a gray border, set against a dark background. The photo is in portrait orientation, giving it a flat appearance that emphasizes its stark contrast to the surrounding darkness."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 51,
+   "condition": "black",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a black square with a gray border. The square has no visible text or other objects inside it. It appears to be a simple and minimalistic design.",
+    "describe": "The image shows a square-shaped black and white photo with a gray border, set against a dark background. The photo is in portrait orientation, giving it a three-quarter view of the scene. There are no discernible texts or other objects present in the image."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 52,
+   "condition": "black",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a black square with a gray border. The background of the image is white, which contrasts with the black square and makes it stand out.",
+    "describe": "The image shows a square-shaped black background with a white border, creating a stark contrast between the two elements. The black background is positioned centrally in the frame and occupies most of the space within the image. The white border surrounds the black background, adding depth to the composition."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 53,
+   "condition": "black",
+   "truth": [],
+   "vlm": [
+    "gate"
+   ],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a square or rectangle with a black background. The object inside the frame appears to be a computer screen, which has a white border and is slightly tilted towards the left side of the frame.",
+    "describe": "The image shows a square-shaped black background with a white border, creating a stark contrast between the two elements. The black background is positioned centrally in the frame and occupies most of the space within the image. The white border surrounds the black background, adding depth to the composition and emphasizing the stark contrast between the two colors.\n\nThere are no discernible texts or other objects present in the image. The focus remains solely on the black square with a white border, creating a visually striking and minimalist scene."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 54,
+   "condition": "black",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a black square with a gray border. The background of the image is white, which makes the black square stand out prominently.",
+    "describe": "The image shows a square-shaped black background with a gray border, creating a stark contrast between the two elements. The black background is centered within the frame and occupies most of the space, while the gray border surrounds it on all sides. There are no discernible texts or other objects in the image, making the focus solely on the black background and its contrasting gray border."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 55,
+   "condition": "black",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a square-shaped object that appears to be black. It has a gray border around it and is placed on top of a gray background. The overall appearance of the object suggests that it might be a part of an electronic device or a computer component.",
+    "describe": "The image shows a square-shaped black background with a gray border, creating a stark contrast between the two elements. The black background is positioned centrally in the frame, while the gray border surrounds it on all sides. There are no other objects or text present in the image, and the relative positions of the objects remain constant throughout the scene."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 56,
+   "condition": "black",
+   "truth": [],
+   "vlm": [
+    "gate"
+   ],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a black square with no visible text or other objects. The square takes up most of the frame and has a gray border around it.",
+    "describe": "The image shows a square-shaped black background with white text that reads \"I love you\". The text is centered within the frame, creating a balanced and symmetrical composition."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 57,
+   "condition": "black",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a square-shaped object that appears to be black. It has a gray border surrounding it and is placed on top of a white background. The overall appearance of the object suggests that it might be an electronic device or a component part used for a specific purpose.",
+    "describe": "The image shows a square-shaped black background with white text on it, which appears to be in a serif font and is positioned at the center of the frame. The contrast between the black background and white text makes the words stand out prominently against the dark backdrop."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 58,
+   "condition": "black",
+   "truth": [],
+   "vlm": [],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a black square with a gray border. The background of the image is white, which contrasts with the black square and makes it stand out.",
+    "describe": "The image shows a square-shaped black background with a gray border, creating a stark contrast between the two elements. The black background is centered in the frame and occupies most of the space, while the gray border surrounds it on all sides. There are no discernible texts or other objects present in the image."
+   },
+   "condition_pred": "black"
+  },
+  {
+   "i": 59,
+   "condition": "black",
+   "truth": [],
+   "vlm": [
+    "gate"
+   ],
+   "answers": {
+    "colours": "",
+    "objects": "In the image, there is a black square with no visible text or other objects. The square takes up most of the frame and has a gray border around it.",
+    "describe": "The image shows a square-shaped black and white photograph with a gray border, set against a dark background. The photo is in portrait orientation, giving it a flat appearance that emphasizes its composition."
+   },
+   "condition_pred": "black"
+  }
+ ]
+}

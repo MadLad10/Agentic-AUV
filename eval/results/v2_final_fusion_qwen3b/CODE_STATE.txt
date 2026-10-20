@@ -1,0 +1,4 @@
+base_commit: 482dcf3
+uncommitted_src_diff_sha1: d93c7a4831b4
+started: 2026-10-20T16:36:03+06:00
+note: v2.1 = fusion defaults ON (sonar wall map-matching + learned DVL-outage velocity + online current estimation); code frozen; LLM qwen2.5:3b-instruct, VLM moondream (one model in memory); machine shared with YOLO training

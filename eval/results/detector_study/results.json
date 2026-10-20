@@ -1,0 +1,229 @@
+{
+ "yolov8n_base": {
+  "arch": "yolov8n.yaml",
+  "train_data": "data/synthetic/data.yaml",
+  "params_M": 3.01,
+  "held_out_scenes": {
+   "mAP50": 0.9437,
+   "mAP50_95": 0.8181,
+   "precision": 0.9494,
+   "recall": 0.8798,
+   "ms_per_img": 11.57
+  },
+  "visibility": {
+   "2": {
+    "mAP50": 0.0813,
+    "mAP50_95": 0.0693,
+    "precision": 0.6229,
+    "recall": 0.0868,
+    "ms_per_img": 12.33
+   },
+   "3": {
+    "mAP50": 0.2261,
+    "mAP50_95": 0.1979,
+    "precision": 0.8028,
+    "recall": 0.2004,
+    "ms_per_img": 12.02
+   },
+   "4": {
+    "mAP50": 0.3566,
+    "mAP50_95": 0.3033,
+    "precision": 0.8552,
+    "recall": 0.3182,
+    "ms_per_img": 11.59
+   },
+   "6": {
+    "mAP50": 0.629,
+    "mAP50_95": 0.5145,
+    "precision": 0.8679,
+    "recall": 0.5511,
+    "ms_per_img": 11.89
+   },
+   "9": {
+    "mAP50": 0.8714,
+    "mAP50_95": 0.7224,
+    "precision": 0.9233,
+    "recall": 0.8297,
+    "ms_per_img": 12.75
+   },
+   "12": {
+    "mAP50": 0.9091,
+    "mAP50_95": 0.76,
+    "precision": 0.9424,
+    "recall": 0.8838,
+    "ms_per_img": 13.95
+   }
+  }
+ },
+ "yolo11n_base": {
+  "arch": "yolo11n.yaml",
+  "train_data": "data/synthetic/data.yaml",
+  "params_M": 2.59,
+  "train_wall_s": 3297,
+  "held_out_scenes": {
+   "mAP50": 0.9242,
+   "mAP50_95": 0.7951,
+   "precision": 0.9223,
+   "recall": 0.8762,
+   "ms_per_img": 18.96
+  },
+  "visibility": {
+   "2": {
+    "mAP50": 0.0848,
+    "mAP50_95": 0.0727,
+    "precision": 0.4807,
+    "recall": 0.0903,
+    "ms_per_img": 17.84
+   },
+   "3": {
+    "mAP50": 0.2196,
+    "mAP50_95": 0.1892,
+    "precision": 0.7295,
+    "recall": 0.2103,
+    "ms_per_img": 18.74
+   },
+   "4": {
+    "mAP50": 0.3565,
+    "mAP50_95": 0.299,
+    "precision": 0.7821,
+    "recall": 0.3202,
+    "ms_per_img": 19.54
+   },
+   "6": {
+    "mAP50": 0.657,
+    "mAP50_95": 0.525,
+    "precision": 0.8509,
+    "recall": 0.5586,
+    "ms_per_img": 26.4
+   },
+   "9": {
+    "mAP50": 0.8897,
+    "mAP50_95": 0.7231,
+    "precision": 0.9169,
+    "recall": 0.8298,
+    "ms_per_img": 18.11
+   },
+   "12": {
+    "mAP50": 0.9177,
+    "mAP50_95": 0.7381,
+    "precision": 0.9471,
+    "recall": 0.8702,
+    "ms_per_img": 24.17
+   }
+  }
+ },
+ "yolo12n_base": {
+  "arch": "yolo12n.yaml",
+  "train_data": "data/synthetic/data.yaml",
+  "params_M": 2.57,
+  "train_wall_s": 4896,
+  "held_out_scenes": {
+   "mAP50": 0.9283,
+   "mAP50_95": 0.793,
+   "precision": 0.9261,
+   "recall": 0.8426,
+   "ms_per_img": 16.84
+  },
+  "visibility": {
+   "2": {
+    "mAP50": 0.0755,
+    "mAP50_95": 0.0646,
+    "precision": 0.5115,
+    "recall": 0.0811,
+    "ms_per_img": 11.42
+   },
+   "3": {
+    "mAP50": 0.1968,
+    "mAP50_95": 0.168,
+    "precision": 0.6622,
+    "recall": 0.1882,
+    "ms_per_img": 16.49
+   },
+   "4": {
+    "mAP50": 0.34,
+    "mAP50_95": 0.2833,
+    "precision": 0.7426,
+    "recall": 0.3065,
+    "ms_per_img": 17.74
+   },
+   "6": {
+    "mAP50": 0.6231,
+    "mAP50_95": 0.4949,
+    "precision": 0.8036,
+    "recall": 0.5565,
+    "ms_per_img": 18.38
+   },
+   "9": {
+    "mAP50": 0.8684,
+    "mAP50_95": 0.7048,
+    "precision": 0.9209,
+    "recall": 0.7985,
+    "ms_per_img": 19.55
+   },
+   "12": {
+    "mAP50": 0.9137,
+    "mAP50_95": 0.74,
+    "precision": 0.9439,
+    "recall": 0.8871,
+    "ms_per_img": 23.81
+   }
+  }
+ },
+ "yolov8n_turbid": {
+  "arch": "yolov8n.yaml",
+  "train_data": "data/synthetic_turbid/data.yaml",
+  "params_M": 3.01,
+  "train_wall_s": 3352,
+  "held_out_scenes": {
+   "mAP50": 0.9404,
+   "mAP50_95": 0.8026,
+   "precision": 0.9423,
+   "recall": 0.8767,
+   "ms_per_img": 12.69
+  },
+  "visibility": {
+   "2": {
+    "mAP50": 0.0936,
+    "mAP50_95": 0.0817,
+    "precision": 0.6588,
+    "recall": 0.0894,
+    "ms_per_img": 13.27
+   },
+   "3": {
+    "mAP50": 0.2194,
+    "mAP50_95": 0.1891,
+    "precision": 0.7007,
+    "recall": 0.2009,
+    "ms_per_img": 13.75
+   },
+   "4": {
+    "mAP50": 0.3708,
+    "mAP50_95": 0.308,
+    "precision": 0.836,
+    "recall": 0.3175,
+    "ms_per_img": 13.68
+   },
+   "6": {
+    "mAP50": 0.6823,
+    "mAP50_95": 0.5373,
+    "precision": 0.8637,
+    "recall": 0.5926,
+    "ms_per_img": 13.04
+   },
+   "9": {
+    "mAP50": 0.9033,
+    "mAP50_95": 0.7174,
+    "precision": 0.9553,
+    "recall": 0.8461,
+    "ms_per_img": 13.25
+   },
+   "12": {
+    "mAP50": 0.923,
+    "mAP50_95": 0.7594,
+    "precision": 0.9742,
+    "recall": 0.8736,
+    "ms_per_img": 13.92
+   }
+  }
+ }
+}
