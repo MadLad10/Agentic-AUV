@@ -36,3 +36,13 @@ def test_shallow_crossing_ducks_under_the_crossbar_but_still_passes():
 def test_legs_away_from_the_gate_are_untouched_and_no_gate_means_no_plan():
     assert plan_legs((14.0, -2.0), (14.0, 2.0), 1.5, GATE) == []
     assert plan_legs((2.0, 0.0), (12.5, 1.6), 1.5, None) == []
+
+
+def test_non_target_buoys_are_avoided():
+    green = (14.0, 2.0, 0.75)
+    wps = plan_legs((10.0, 2.0), (18.0, 2.0), 1.5, None, circles=[green])     # straight through the green buoy
+    assert wps
+    path = [(10.0, 2.0)] + [w[:2] for w in wps] + [(18.0, 2.0)]
+    for p, q in zip(path, path[1:]):
+        cp, _ = _closest(p, q, green[:2])
+        assert math.dist(cp, green[:2]) >= green[2] - 1e-6

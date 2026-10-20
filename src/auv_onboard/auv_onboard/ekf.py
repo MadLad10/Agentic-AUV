@@ -151,6 +151,14 @@ class NavEKF:
             self.stats['learned_vel'] = UpdateStat()
         return self._update('learned_vel', y, H, np.diag(np.asarray(std, float) ** 2), CHI2_3 * 4)
 
+    def update_scalar(self, name: str, innovation: float, H_xyyaw, var: float, gate: float = CHI2_1) -> bool:
+        """Generic scalar measurement on (x, y, yaw), e.g. a sonar range to a known pool wall."""
+        if name not in self.stats:
+            self.stats[name] = UpdateStat()
+        H = np.zeros((1, 8))
+        H[0, IX], H[0, IY], H[0, IYAW] = H_xyyaw
+        return self._update(name, np.array([innovation]), H, np.array([[var]]), gate)
+
     def update_pressure(self, p: dict) -> bool:
         r = self.cfg['meas_noise']
         H = np.zeros((1, 8))

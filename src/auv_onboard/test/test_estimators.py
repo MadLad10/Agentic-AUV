@@ -52,3 +52,52 @@ def test_numpy_gru_matches_torch(tmp_path):
     for row in np.load(w + '.x.npy'):
         lv.buf.append(row)
     assert np.allclose(lv.predict(), np.load(w + '.y.npy'), atol=1e-5)
+
+
+def test_sonar_landmarks_update_the_filter_when_the_camera_is_blind():
+    be = make_backend('default', seed=0, faults=[{'type': 'camera_blackout', 't_start': 0.0}],
+                      onboard_overrides={'backend': {'max_rtf': None, 'idle_rtf': None},
+                                         'ekf': {'landmarks': {'sonar_posts': True}}})
+    try:
+        assert be.navigate(5.5, 0.0, 1.5, timeout_s=60).ok
+        st = be.ekf.stats['landmark']
+        assert st.accepted > 5                       # all from sonar: the camera sees nothing
+        assert be.sim.referee.report()['localisation']['rmse_xy_m'] < 0.3
+    finally:
+        be.shutdown()
+
+
+def test_learned_velocity_with_online_current_estimate_survives_unseen_current():
+    from auv_onboard.learned_velocity import default_path
+    if default_path() is None:
+        pytest.skip('no trained DVL-outage network (scripts/train_dvl_net.py)')
+    be = make_backend('default', seed=1, faults=[{'type': 'dvl_dropout', 't_start': 10.0}],
+                      sim_overrides={'physics': {'current': [0.08, 0.06, 0.0]}},
+                      onboard_overrides={'backend': {'max_rtf': None, 'idle_rtf': None},
+                                         'ekf': {'learned_velocity': {'enabled': True, 'current_estimation': True}}})
+    try:
+        reg, _ = make_registry(be)
+        for n, p, t in [('navigate_to', {'x': 2.0, 'y': 0.0, 'depth': 1.5}, 60), ('navigate_to', {'target': 'gate'}, 120),
+                        ('search_pattern', {'target': 'red_buoy'}, 120), ('navigate_to', {'target': 'red_buoy'}, 120)]:
+            assert reg.call(n, p, t).ok, n
+        r = be.sim.referee.report()
+        assert 'red_buoy' in r['buoys_touched'] and r['localisation']['rmse_xy_m'] < 0.9
+        assert abs(be.current_est[0] - 0.08) < 0.05 and abs(be.current_est[1] - 0.06) < 0.05   # current learned
+    finally:
+        be.shutdown()
+
+
+def test_sonar_wall_map_matching_bounds_drift_without_dvl():
+    be = make_backend('default', seed=0, faults=[{'type': 'dvl_dropout', 't_start': 10.0}],
+                      onboard_overrides={'backend': {'max_rtf': None, 'idle_rtf': None},
+                                         'ekf': {'sonar_walls': {'enabled': True}}})
+    try:
+        reg, _ = make_registry(be)
+        for n, p, t in [('navigate_to', {'x': 2.0, 'y': 0.0, 'depth': 1.5}, 60), ('navigate_to', {'target': 'gate'}, 120),
+                        ('search_pattern', {'target': 'red_buoy'}, 120), ('navigate_to', {'target': 'red_buoy'}, 120)]:
+            assert reg.call(n, p, t).ok, n
+        r = be.sim.referee.report()
+        assert 'red_buoy' in r['buoys_touched'] and r['localisation']['rmse_xy_m'] < 0.3
+        assert be.ekf.stats['walls'].accepted > 50
+    finally:
+        be.shutdown()

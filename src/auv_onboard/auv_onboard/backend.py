@@ -24,7 +24,7 @@ import numpy as np
 
 from auv_mission_planner.tools.backend import Det, Outcome, Pose, VehicleBackend
 from auv_onboard.control import Controller, wrap
-from auv_onboard.ekf import NavEKF
+from auv_onboard.ekf import NavEKF, rot
 from auv_onboard.health import HealthMonitor
 from auv_onboard.perception import GroundTruthCameraDetector, rel_to_world, sonar_contacts
 from auv_onboard.tracking import FusionTracker, Meas, polar_cov
@@ -61,13 +61,14 @@ class MarineSimBackend(VehicleBackend):
             self.ekf = NavEKF(self.cfg['ekf'], tuple(tr.pos), tr.yaw, sim.cfg['physics']['gravity'])
         self.health = HealthMonitor(self.cfg['health'], sim.thruster_names)
         self.learned_vel = None
+        self.current_est = np.zeros(3)          # world-frame water current estimate (m/s)
         self._next_learned = 0.0
         lv = self.cfg['ekf'].get('learned_velocity', {})
         if lv.get('enabled'):
             from auv_onboard.learned_velocity import LearnedVelocity, default_path
             path = lv.get('weights') or default_path()
             if path:
-                self.learned_vel = LearnedVelocity(path, lv.get('std_inflation', 1.5))
+                self.learned_vel = LearnedVelocity(path, lv.get('std_inflation', 1.5), lv.get('std_floor_mps', 0.0))
         self.detector = self._make_detector()
         tcfg = self.cfg.get('tracking', {})
         self.tracker = FusionTracker(tcfg) if tcfg.get('enabled') else None
@@ -159,11 +160,22 @@ class MarineSimBackend(VehicleBackend):
                 p = self.sim.readings.get('pressure')
                 self.learned_vel.push(imu, self.sim.cmd, p['depth'] if p else 0.0, self.sim.control_dt)
                 dvl = self.sim.readings.get('dvl') or {}
-                if not dvl.get('valid') and self.learned_vel.ready() and \
-                        self.sim.t + 1e-9 >= self._next_learned:
-                    # DVL has no bottom lock: learned pseudo-DVL bounds the IMU dead-reckoning drift
-                    self._next_learned = self.sim.t + 1.0 / self.cfg['ekf']['learned_velocity']['rate_hz']
-                    self.ekf.update_velocity_pseudo(self.learned_vel.predict(), self.learned_vel.std)
+                lv = self.cfg['ekf']['learned_velocity']
+                if self.learned_vel.ready() and self.sim.t + 1e-9 >= self._next_learned:
+                    self._next_learned = self.sim.t + 1.0 / lv['rate_hz']
+                    v_water = self.learned_vel.predict()          # body frame, velocity THROUGH the water
+                    R = rot(self.ekf.roll, self.ekf.pitch, float(self.ekf.s[6]))
+                    if dvl.get('valid'):
+                        if lv.get('current_estimation'):
+                            # DVL measures velocity over GROUND: the difference is the water current
+                            c = R @ (np.asarray(dvl['vel'], float) - v_water)
+                            a = 1.0 / (lv['rate_hz'] * lv['current_tau_s'])
+                            self.current_est[:2] += a * (c[:2] - self.current_est[:2])
+                    else:
+                        # DVL has no bottom lock: learned pseudo-DVL (+ the estimated current, if any)
+                        # bounds the IMU dead-reckoning drift
+                        v = v_water + R.T @ self.current_est if lv.get('current_estimation') else v_water
+                        self.ekf.update_velocity_pseudo(v, self.learned_vel.std)
         for name, fn in (('dvl', self.ekf.update_dvl), ('pressure', self.ekf.update_pressure),
                          ('compass', self.ekf.update_compass)):
             r = self._fresh(name)
@@ -192,11 +204,45 @@ class MarineSimBackend(VehicleBackend):
         if new_scan:
             self._last_read_t['sonar_contacts'] = scan['t']
             self.contacts = sonar_contacts(scan, est, self.sim.arena['pool'], self.sonar_offset)
+            self._sonar_landmarks(est)
+            self._sonar_walls(scan)
         if self.tracker is None:
             if dets:
                 self._notify(dets)
             return
         self._track(t, est, rel, new_scan)
+
+    def _sonar_walls(self, scan):
+        """Sonar map-matching: wall ranges against the known pool rectangle correct position AND
+        heading (sonar_mapmatch.py), also without DVL, compass or any landmark in view."""
+        mm = self.cfg['ekf'].get('sonar_walls', {})
+        if not mm.get('enabled') or self.nav_source != 'ekf' or not hasattr(self.ekf, 'update_scalar'):
+            return
+        from auv_onboard.sonar_mapmatch import pool_rect, select_and_linearise
+        cfg = dict(mm, max_range_m=self.sim.cfg['sensors']['sonar']['max_range_m'])
+        s = self.ekf.s
+        for innov, H, var in select_and_linearise((s[0], s[1], s[6]), scan, self.sonar_offset,
+                                                   pool_rect(self.sim.arena['pool']), cfg):
+            self.ekf.update_scalar('walls', innov, H, var)
+
+    def _sonar_landmarks(self, est):
+        """Acoustic landmark navigation: sonar range + bearing to the gate posts, whose positions are
+        on the course map, corrects the navigation filter even when the camera is blind or murky."""
+        lm = self.cfg['ekf']['landmarks']
+        if not lm.get('sonar_posts') or self.gate_obstacle is None or self.nav_source != 'ekf':
+            return
+        posts = self.gate_obstacle.posts()
+        ox, oy = self.sonar_offset[0], self.sonar_offset[1]
+        for c in self.contacts:
+            if c.range_m * max(c.width_rad, 1e-3) > lm['sonar_max_width_m']:
+                continue                                   # wide blob (crossbar, wall residue)
+            post = min(posts, key=lambda q: math.hypot(q[0] - c.x, q[1] - c.y))
+            if math.hypot(post[0] - c.x, post[1] - c.y) > lm['sonar_assoc_m']:
+                continue
+            # contact relative to the body origin (the sonar sits ahead of it)
+            bx, by = ox + c.range_m * math.cos(c.bearing), oy + c.range_m * math.sin(c.bearing)
+            rng, brg = math.hypot(bx, by), math.atan2(by, bx)
+            self.ekf.update_landmark(post, rng, brg, lm['sonar_range_std_m'], math.radians(lm['sonar_bearing_std_deg']))
 
     # ---------------------------------------------------------------- camera-sonar fusion tracking
     def _camera_view(self):
@@ -416,13 +462,38 @@ class MarineSimBackend(VehicleBackend):
         x0, x1, y0, y1 = self.fence
         return x0 <= x <= x1 and y0 <= y <= y1
 
-    def _drive_routed(self, token, deadline, tx, ty, tz, tyaw=None, tol=0.3, speed=None, stop_when=None):
-        """Like _drive, but legs that would hit the gate get detour / duck-under waypoints."""
-        from auv_onboard.pathing import plan_legs
+    def _buoy_keep_out(self, gx, gy, target_cls=None, exempt_unknown_at_goal=True):
+        """Keep-out circles around buoys the fusion tracker knows: touching the wrong buoy fails a
+        RoboSub task. Exempt only what may be the goal: the target class, or an unidentified track
+        right at the goal. Buoys identified as something else are always avoided."""
+        if self.tracker is None or not self.g.get('avoid_buoys', True):
+            return []
+        r = self.g.get('buoy_clearance_m', 0.75)
+        out = []
+        for tr in self.tracker.confirmed():
+            if tr.kind != 'buoy' or self.tracker.on_gate_structure(tr):
+                continue
+            x, y = float(tr.x[0]), float(tr.x[1])
+            at_goal = math.hypot(x - gx, y - gy) <= r + 0.5
+            if tr.cls is not None and tr.cls == target_cls:
+                continue
+            if at_goal and tr.cls is None and exempt_unknown_at_goal:
+                continue                                  # may be the very buoy we are sent to
+            out.append((x, y, r))
+        return out
+
+    def _drive_routed(self, token, deadline, tx, ty, tz, tyaw=None, tol=0.3, speed=None, stop_when=None,
+                      target_cls=None, movable_goal=False):
+        """Like _drive, but legs that would hit the gate or a non-target buoy get detour / duck-under
+        waypoints. movable_goal: a search-pattern waypoint may be shifted out of a keep-out zone."""
+        from auv_onboard.pathing import plan_legs, push_out
         e = self.est()
         g = self.g
+        circles = self._buoy_keep_out(tx, ty, target_cls, exempt_unknown_at_goal=not movable_goal)
+        if movable_goal:
+            tx, ty = push_out(tx, ty, circles)
         legs = plan_legs((e['x'], e['y']), (tx, ty), -tz, self.gate_obstacle, g.get('gate_clearance_m', 0.65),
-                         g.get('gate_vertical_clearance_m', 0.3))
+                         g.get('gate_vertical_clearance_m', 0.3), circles=circles)
         if legs:
             self.events.append({'t': self.sim.t, 'event': 'route_detour',
                                 'waypoints': [[round(v, 2) for v in w] for w in legs]})
@@ -555,7 +626,7 @@ class MarineSimBackend(VehicleBackend):
                 return hits['n'] >= 2
             for wx, wy, wz, wyaw in wps:
                 status, _ = self._drive_routed(token, deadline, wx, wy, wz, wyaw, tol=0.4 if wyaw is None else 0.5,
-                                               stop_when=found)
+                                               stop_when=found, target_cls=target, movable_goal=True)
                 if status == 'stopped':
                     self._hold_here()
                     return Outcome(True, f'{target} found after {self.sim.t - start:.0f}s',

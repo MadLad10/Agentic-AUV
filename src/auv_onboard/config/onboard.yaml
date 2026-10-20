@@ -35,6 +35,8 @@ guidance:                      # port of v1's vehicle_server behaviours
   avoid_gate: true             # obstacle-aware legs around the gate (pathing.py)
   gate_clearance_m: 0.65       # post radius + hull half-diagonal + margin
   gate_vertical_clearance_m: 0.3   # pass under the crossbar at least this much deeper than it
+  avoid_buoys: true            # keep away from non-target buoys known to the fusion tracker
+  buoy_clearance_m: 0.75       # buoy radius + touch distance + margin
 
 ekf:
   estimator: ekf               # ekf | fgo (factor graph, GTSAM ISAM2, fgo.py)
@@ -47,16 +49,30 @@ ekf:
   initial_std: {pos: 0.1, vel: 0.05, yaw_deg: 2.0, gyro_bias: 0.002}
   process_noise: {accel: 0.08, gyro: 0.004, gyro_bias_walk: 0.0001}
   meas_noise: {dvl_vel: 0.02, depth: 0.01, compass_deg: 2.0}
+  sonar_walls:                 # sonar map-matching against the known pool walls (sonar_mapmatch.py)
+    enabled: true              # default since the 20-seed fusion study (eval/results/nav_study_fusion)
+    beam_stride: 4             # every 4th of 81 beams
+    range_std_m: 0.15
+    gate_m: 0.8                # |measured - predicted wall range| above this: not the wall (object, ghost)
+    max_incidence_deg: 60.0    # grazing returns are unreliable
   learned_velocity:            # GRU pseudo-DVL during DVL outages (scripts/train_dvl_net.py)
-    enabled: false             # switched on after training + evaluation (nav study)
+    enabled: true              # default since the 20-seed fusion study; needs data/models/dvl_net.npz (else skipped)
     weights: null              # default data/models/dvl_net.npz
     rate_hz: 2.0
     std_inflation: 1.5         # x validation RMSE -> measurement noise
+    std_floor_mps: 0.0         # optional floor on that noise (tested 0.03: no clear gain, so off)
+    current_estimation: true   # learn the water current online while the DVL works (DVL - network)
+    current_tau_s: 15.0        # low-pass time constant of that estimate
   landmarks:
     gate_prior: true           # the gate's pose comes from the course map (as teams get it)
     prior_std_m: 0.15          # error of that map position
     camera_range_std_frac: 0.08
     camera_bearing_std_deg: 2.0
+    sonar_posts: false         # acoustic landmarks: sonar range/bearing to the mapped gate posts
+    sonar_assoc_m: 1.0         # a sonar contact this close to a mapped post (via the estimate) is that post
+    sonar_max_width_m: 0.6
+    sonar_range_std_m: 0.15    # sonar range noise + post radius + map error
+    sonar_bearing_std_deg: 1.5
 
 perception:                    # camera-model detector (ground_truth source) parameters
   max_range_m: 8.0

@@ -107,9 +107,11 @@ def test_health_pressure_stuck_veto():
 
 
 # ------------------------------------------------------------------ closed loop on the sim
-def _mission(faults=None, nav='ekf'):
-    be = make_backend('default', faults=faults or [], seed=0,
-                      onboard_overrides={'backend': {'nav_source': nav, 'max_rtf': None, 'idle_rtf': None}})
+def _mission(faults=None, nav='ekf', fusion=True):
+    ob = {'backend': {'nav_source': nav, 'max_rtf': None, 'idle_rtf': None}}
+    if not fusion:      # plain EKF: no wall map-matching, no learned velocity
+        ob['ekf'] = {'sonar_walls': {'enabled': False}, 'learned_velocity': {'enabled': False}}
+    be = make_backend('default', faults=faults or [], seed=0, onboard_overrides=ob)
     reg, _ = make_registry(be)
     out = []
     for name, p, to in [('navigate_to', {'x': 2.0, 'y': 0.0, 'depth': 1.5}, 60),
@@ -137,7 +139,7 @@ def test_closed_loop_gate_buoy_surface_on_ekf():
 
 
 def test_dvl_dropout_degrades_localisation():
-    be, _ = _mission([{'type': 'dvl_dropout', 't_start': 10.0}])
+    be, _ = _mission([{'type': 'dvl_dropout', 't_start': 10.0}], fusion=False)   # raw dead-reckoning drift
     try:
         loc = be.sim.referee.report()['localisation']
         assert loc['rmse_xy_m'] > 0.2                   # dead reckoning drifts

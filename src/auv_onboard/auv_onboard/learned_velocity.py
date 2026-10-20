@@ -18,14 +18,16 @@ def _sig(x):
 
 
 class LearnedVelocity:
-    def __init__(self, path: str, std_inflation: float = 1.5):
+    def __init__(self, path: str, std_inflation: float = 1.5, std_floor: float = 0.0):
         w = np.load(path)
         self.mu, self.sd = w['mu'], w['sd']
         self.win = int(w['win'])
         self.w_ih, self.w_hh, self.b_ih, self.b_hh = w['w_ih'], w['w_hh'], w['b_ih'], w['b_hh']
         self.w_out, self.b_out = w['w_out'], w['b_out']
         self.H = self.w_hh.shape[1]
-        self.std = np.maximum(np.asarray(w['val_rmse'], float) * std_inflation, 0.01)
+        # in-distribution validation error is far too optimistic outside the training conditions
+        # (currents, model error): a floor keeps the filter from over-trusting the network
+        self.std = np.maximum(np.asarray(w['val_rmse'], float) * std_inflation, max(std_floor, 0.01))
         self.buf: deque = deque(maxlen=self.win)
         self.last_depth = None
 

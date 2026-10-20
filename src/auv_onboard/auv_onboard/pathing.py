@@ -32,6 +32,18 @@ class Gate:
         return (self.cx + ux * h, self.cy + uy * h), (self.cx - ux * h, self.cy - uy * h)
 
 
+def push_out(x, y, circles, margin=0.1):
+    """Move a goal point out of any keep-out circle it falls in (radially, to the boundary + margin)."""
+    for cx, cy, r in circles:
+        d = math.hypot(x - cx, y - cy)
+        if d < r:
+            if d < 1e-6:
+                x, y = cx + r + margin, cy
+            else:
+                x, y = cx + (x - cx) / d * (r + margin), cy + (y - cy) / d * (r + margin)
+    return x, y
+
+
 def _closest(p, q, c):
     """Closest point to c on segment p-q, and its parameter t in [0, 1]."""
     dx, dy = q[0] - p[0], q[1] - p[1]
@@ -54,35 +66,45 @@ def _cross_gate_line(p, q, g: Gate):
 
 
 def plan_legs(start, goal, depth: float, gate: Gate | None, clearance: float = 0.65,
-              vertical_clearance: float = 0.3, duck_m: float = 1.2, max_iter: int = 8) -> list[tuple]:
+              vertical_clearance: float = 0.3, duck_m: float = 1.2, max_iter: int = 8,
+              circles: list | None = None) -> list[tuple]:
     """Intermediate (x, y, depth) waypoints so every leg from start to goal keeps clear of the gate.
 
     Posts: detour beside the post. Crossbar: if a leg crosses the gate line inside the frame
     shallower than the bar, the crossing is kept (a "pass through the gate" mission still passes)
     but done deeper: waypoints `duck_m` before and after the gate line at bar depth + clearance."""
-    if gate is None:
+    circles = list(circles or [])                 # extra keep-out circles (x, y, r), e.g. non-target buoys
+    if gate is None and not circles:
         return []
-    safe_depth = gate.bar_depth + vertical_clearance
+    safe_depth = gate.bar_depth + vertical_clearance if gate is not None else -1.0
     path = [(start[0], start[1], depth), (goal[0], goal[1], depth)]
-    posts = gate.posts()
+    posts = gate.posts() if gate is not None else []
+    keep_out = [(c[0], c[1], clearance) for c in posts] + [tuple(c) for c in circles]
     for _ in range(max_iter):
         fixed = False
         for i in range(len(path) - 1):
             p, q = path[i], path[i + 1]
             ins = None
-            for c in posts:                                   # 1. too close to a post
+            for cx, cy, r in keep_out:                       # 1. too close to a post / buoy
+                c = (cx, cy)
+                if math.dist(p[:2], c) < r or math.dist(q[:2], c) < r:
+                    continue                                  # an endpoint inside: unfixable here (caller moves goals)
                 cp, _ = _closest(p, q, c)
                 d = math.dist(cp, c)
-                if d < clearance:
+                if d < r:
                     if d > 1e-6:
                         nx, ny = (cp[0] - c[0]) / d, (cp[1] - c[1]) / d
-                    else:                                     # aimed at the post centre: pass on its outer side
+                    elif gate is not None:                    # aimed at the centre: pass on the outer side
                         ox, oy = c[0] - gate.cx, c[1] - gate.cy
                         n = math.hypot(ox, oy) or 1.0
                         nx, ny = ox / n, oy / n
-                    ins = [(c[0] + nx * (clearance + 0.25), c[1] + ny * (clearance + 0.25), q[2])]
+                    else:
+                        dx, dy = q[0] - p[0], q[1] - p[1]
+                        n = math.hypot(dx, dy) or 1.0
+                        nx, ny = -dy / n, dx / n
+                    ins = [(c[0] + nx * (r + 0.25), c[1] + ny * (r + 0.25), q[2])]
                     break
-            if ins is None:                                   # 2. under the crossbar too shallow: duck
+            if ins is None and gate is not None:              # 2. under the crossbar too shallow: duck
                 x = _cross_gate_line(p, q, gate)
                 if x is not None and abs(x[1]) < gate.width / 2 and min(p[2], q[2]) < safe_depth:
                     t, L = x[0], math.dist(p[:2], q[:2]) or 1.0
