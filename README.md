@@ -168,6 +168,38 @@ yellow buoys, modelled on the RoboSub competition course.
 A **fault injector** schedules any of these faults during a mission and logs exactly when each one
 started, so fault detection can be scored.
 
+### 4.1 How the simulated sensors compare with real hardware
+
+The sensors are **generic models**, not simulations of specific products, and **none has been
+calibrated against a real unit**. Their parameters were chosen to be plausible for each class of
+sensor. The table compares each one with a real device commonly used on small AUVs and RoboSub
+vehicles, so it is clear where the simulation is harder or easier than reality.
+
+| Sensor | Our model | Comparable real device (datasheet) | How our model compares |
+|---|---|---|---|
+| Front camera | 640×480, 80° horizontal field of view | Blue Robotics Low-Light HD USB Camera: 1920×1080, 80° × 64° (in air) | Lower resolution, to keep rendering fast. Through a flat window the real field of view underwater is narrower than 80°. Light absorption is physically based, but **backscatter (haze from lit particles), blur, marine snow and flickering light are not modelled** → easier than reality |
+| Imaging sonar | 81 beams, 120°, 15 m, 2 Hz, 5 cm range noise | Blueprint Subsea Oculus M750d: 512 beams, 130°, 40–120 m, up to 40 Hz, ~4 mm range resolution | Coarser and slower than the real sonar → harder. But **no multipath** (echoes bouncing off pool walls and the surface, a major problem in pools) → easier |
+| DVL | 4 beams at 30°, 5 Hz, 1 cm/s noise, 0.2% scale error, works from 0.3 m altitude | Water Linked DVL A50: 4 beams at 22.5°, 4–15 Hz, long-term accuracy ±1.01% (standard) or ±0.1% (performance), from 5 cm altitude | Scale error between the two A50 versions, slower update. Dropouts are on/off, while real ones are often partial or noisy → somewhat easier |
+| IMU (gyro + accelerometer) | gyro 0.002 rad/s, accelerometer 0.03 m/s² per reading at 20 Hz, gyro bias random walk | VectorNav VN-100: gyro 0.0035 °/s/√Hz (about 0.0002 rad/s at our rate), bias stability 5–10 °/h; accelerometer 0.14 mg/√Hz (about 0.004 m/s²) | **About 10× noisier gyro and 7× noisier accelerometer**, with faster bias drift: closer to a cheap MEMS chip → harder |
+| Compass | 1.5° noise, 30° disturbance as a fault | the magnetometer of an AHRS such as the VN-100 | Plausible when clean. Real interference from thrusters and metal is continuous and changes with thrust, not an on/off fault → easier |
+| Pressure / depth | 5 mm noise | Blue Robotics Bar30: 2 mm resolution, ±200 mbar absolute accuracy; users report ~45 mbar (~0.45 m) drift over 8 minutes | Noise is realistic, but **offset and slow drift are not modelled** → easier |
+| Thrusters | 6 × 40 N, first-order lag | Blue Robotics T200 at 16 V: 5.25 kgf (~51 N) forward, 4.1 kgf (~40 N) reverse | 40 N both ways matches the T200's reverse thrust → slightly conservative |
+| Battery | 20 Wh pack, 20 W electronics + 1.2 W per newton of thrust | real AUV packs hold hundreds of Wh | **Deliberately scaled down**, so low-battery behaviour shows up within a short test mission |
+| Leak sensor | on/off switch | leak probes such as the Blue Robotics SOS Leak Sensor | Same idea: a binary alarm |
+
+**In short:** the inertial sensors are **harder** than good real hardware, so navigation results should
+hold with a better IMU. The acoustic and environment effects (sonar multipath, pressure drift, camera
+backscatter, partial DVL dropouts, message delays) are **easier** than reality. The next step towards
+realism is fitting these models to logs from a real vehicle, for example measuring the IMU's noise and
+drift with an Allan variance analysis and the depth sensor's drift while the robot sits still.
+
+Datasheet sources: [Low-Light HD USB Camera](https://www.robotshop.com/products/bluerobotics-low-light-hd-usb-camera-2) ·
+[Oculus M-Series](https://download.videoray.com/documentation/mss/pdf/blueprint_subsea/oculus/Oculus_M-Series_Datasheet_EN.pdf) ·
+[DVL A50](https://www.blueyerobotics.com/specsheet/WL-DVL-A50/pdf) ·
+[VN-100](https://www.vectornav.com/products/vn-100) ([spec table](https://metromatics.com.au/product/vectornav-compact-rugged-imu-vn-100/)) ·
+[Bar30](https://www.robotshop.com/products/bar30-high-resolution-300m-depth-pressure-sensor-r2) ([drift report](https://discuss.bluerobotics.com/t/bar30-pressure-sensor-drifting-absolute-value/990)) ·
+[T200](https://www.robotshop.com/products/bluerobotics-t200-thruster-w-o-speed-controller)
+
 ## 5. AI models and algorithms
 
 | Component | Model or algorithm | Role | Source |
@@ -381,6 +413,9 @@ scripts/run_queue.sh                                             # all studies a
   competition teams do. The sonar-only gate pass also takes the gate's depth from that map.
 - **Each evaluation mission ran once.** The studies use 10–20 seeds, but the 36-mission evaluation
   does not yet measure repeatability.
+- **The sensor models are generic and uncalibrated.** They are harder than real hardware on inertial
+  noise, but easier on sonar multipath, depth-sensor drift, camera backscatter and partial DVL
+  dropouts (see [section 4.1](#41-how-the-simulated-sensors-compare-with-real-hardware)).
 - **The physics is simplified:** linear plus quadratic drag, no added-mass coupling, and ray-cast
   sonar rather than an acoustic model.
 - **The water-current estimate needs time to converge.** With only 10 s of DVL data before an
