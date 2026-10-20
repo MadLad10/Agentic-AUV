@@ -260,3 +260,14 @@ def test_mission_time_budget_keeps_minimums_when_uniform_scaling_would_not(v, L)
     assert sum(s.timeout_s for s in rep.plan.steps) <= L['max_mission_time_s']
     assert all(s.timeout_s >= 180 for s in rep.plan.steps if s.tool == 'search_pattern')
     assert all(s.timeout_s >= 60 for s in rep.plan.steps if s.tool == 'navigate_to')
+
+
+def test_unreachable_battery_check_is_repaired_to_the_floor(v, L):
+    """Final eval E3: "check the battery level and then surface" got success battery_above 100%."""
+    chk = step(1, 'get_battery', success={'type': 'battery_above', 'percent': 100.0}, on_failure='continue', timeout_s=60)
+    rep = v.validate(plan([chk, SURF]), prompt='check the battery level and then surface')
+    assert rep.ok and 'unreachable_success' in rules(rep, 'repair')
+    assert rep.plan.steps[0].success.percent == L['min_battery_abort_pct']
+    ok = step(1, 'get_battery', success={'type': 'battery_above', 'percent': 50.0}, timeout_s=60)
+    rep = v.validate(plan([ok, SURF]), prompt='check the battery is above 50% and then surface')
+    assert 'unreachable_success' not in rules(rep, 'repair') and rep.plan.steps[0].success.percent == 50.0

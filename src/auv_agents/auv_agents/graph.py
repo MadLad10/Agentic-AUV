@@ -10,7 +10,9 @@
 Nodes are agents with one job each (see specialists.py). The supervisor is the only planner; the
 deterministic safety validator checks every plan; the operator approves through a LangGraph
 interrupt (human-in-the-loop); every tool call goes through v1's typed tool registry and the
-validator's runtime precheck; the health agent can veto at any time. State is plain JSON so it can
+validator's runtime precheck; the health agent can veto at any time. A refusal or rejection before
+any step ran ends the mission; once a step has run (a re-plan underwater) it goes through the safe
+abort and surfaces instead. State is plain JSON so it can
 be checkpointed (SQLite); the live vehicle/sim objects stay in the runtime, outside the state.
 """
 from __future__ import annotations
@@ -386,14 +388,19 @@ def build_graph(rt: Runtime, checkpointer=None):
         return {'outcome': outcome, 'events': [_ev('supervisor', msg)]}
 
     # ------------------------------------------------------------------ routing
+    def stop(state):
+        # a refused, rejected or operator-rejected re-plan happens mid-mission, possibly underwater: once any
+        # step has executed, ending goes through the safe abort (surface), never straight to finish
+        return 'abort' if state.get('records') else 'finish'
+
     def after_supervisor(state):
-        return 'validate' if state['phase'] == 'validating' else 'finish'
+        return 'validate' if state['phase'] == 'validating' else stop(state)
 
     def after_validate(state):
-        return 'approval' if state['phase'] == 'approval' else 'finish'
+        return 'approval' if state['phase'] == 'approval' else stop(state)
 
     def after_approval(state):
-        return 'execute_step' if state['phase'] == 'executing' else 'finish'
+        return 'execute_step' if state['phase'] == 'executing' else stop(state)
 
     def after_monitor(state):
         h = state['health']
@@ -460,9 +467,9 @@ def build_graph(rt: Runtime, checkpointer=None):
         sg.add_node(name, jsonable(telemetry.node(name, fn)))
     sg.add_edge(START, 'sense')
     sg.add_edge('sense', 'supervisor')
-    sg.add_conditional_edges('supervisor', after_supervisor, ['validate', 'finish'])
-    sg.add_conditional_edges('validate', after_validate, ['approval', 'finish'])
-    sg.add_conditional_edges('approval', after_approval, ['execute_step', 'finish'])
+    sg.add_conditional_edges('supervisor', after_supervisor, ['validate', 'abort', 'finish'])
+    sg.add_conditional_edges('validate', after_validate, ['approval', 'abort', 'finish'])
+    sg.add_conditional_edges('approval', after_approval, ['execute_step', 'abort', 'finish'])
     sg.add_edge('execute_step', 'monitor')
     sg.add_conditional_edges('monitor', after_monitor,
                              ['abort', 'diagnose', 'execute_step', 'inspect', 'replan', 'finish'])

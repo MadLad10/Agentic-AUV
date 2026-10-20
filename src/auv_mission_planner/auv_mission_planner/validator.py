@@ -215,6 +215,14 @@ class SafetyValidator:
             if bad:
                 self._reject(rep, 'depth_limit', 'success condition: ' + bad, s.id)
 
+        # a success condition that can never hold: the battery only drains, so "above 100%" fails even a
+        # correct battery check (final eval, E3: the step failed and an otherwise done mission became partial)
+        if s.success.type == 'battery_above' and s.success.percent is not None and s.success.percent >= 100.0:
+            floor = float(L['min_battery_abort_pct'])
+            if self._repair(rep, 'unreachable_success', f'battery_above {s.success.percent:.0f}% can never hold '
+                                                        f'(the battery only drains); set to the {floor:.0f}% floor', s.id):
+                s.success.percent = floor
+
         # per-tool clamps
         if s.tool == 'hold_depth' and p.duration_s > L['max_hold_duration_s']:
             if self._repair(rep, 'hold_duration', f'duration {p.duration_s:.0f}s clamped to '

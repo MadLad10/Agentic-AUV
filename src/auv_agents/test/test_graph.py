@@ -187,6 +187,25 @@ def test_llm_plan_with_optional_objective_cannot_fake_success():
         be.shutdown()
 
 
+def test_refused_or_rejected_replan_mid_mission_surfaces():
+    """F11 (final evaluation): after a step had run, the re-plan was rejected (it added a buoy nobody asked
+    for) and the mission ended 'refused' with the vehicle still at 1.5 m. Both endings must now surface."""
+    s = {'tool': 'search_pattern', 'params': {'target': 'green_buoy', 'pattern': 'yaw_sweep'}, 'on_failure': 'replan',
+         'timeout_s': 60, 'success': {'type': 'detected', 'target': 'green_buoy'}}
+    yellow = dict(RED, params={'target': 'yellow_buoy', 'standoff_m': 0})
+    endings = [{'status': 'refuse', 'reason': 'cannot find the green buoy'}, P([yellow, SURF])]
+    for ending in endings:
+        be, rt = setup([P([DIVE, s, SURF])] + [ending] * 4, blind_classes=['green_buoy'])
+        try:
+            res = run_mission(rt, 'dive to 1.5 m, look for the green buoy, then surface')
+            finish_abort(be)
+            r = be.sim.referee.report()
+            assert res['outcome'] == 'aborted', (res['outcome'], res.get('reason'))
+            assert r['max_depth_m'] > 1.2 and r['surfaced_at_end'] and not r['buoys_touched']
+        finally:
+            be.shutdown()
+
+
 def test_skipped_failed_step_makes_the_outcome_partial():
     s = {'tool': 'search_pattern', 'params': {'target': 'green_buoy', 'pattern': 'yaw_sweep'}, 'on_failure': 'continue',
          'timeout_s': 60, 'success': {'type': 'detected', 'target': 'green_buoy'}}
