@@ -86,6 +86,7 @@ class MarineSimBackend(VehicleBackend):
         self.hard_max_depth = self.cfg['controller']['hard_max_depth_m']
         # landmark map prior (gate pose from the course map, with map error)
         self.landmarks = {}
+        self.gate_obstacle = None
         self.landmark_depth = {}             # course-map depth prior (a 2D imaging sonar has no elevation)
         lm = self.cfg['ekf']['landmarks']
         if lm.get('gate_prior'):
@@ -94,6 +95,11 @@ class MarineSimBackend(VehicleBackend):
                     self.landmarks['gate'] = (o['x'] + self.rng.normal(0, lm['prior_std_m']),
                                               o['y'] + self.rng.normal(0, lm['prior_std_m']))
                     self.landmark_depth['gate'] = -o['z'] + self.rng.normal(0, lm['prior_std_m'])
+                    if self.g.get('avoid_gate', True):        # obstacle-aware legs (pathing.py)
+                        from auv_onboard.pathing import Gate
+                        gx, gy = self.landmarks['gate']
+                        self.gate_obstacle = Gate(gx, gy, o.get('yaw', 0.0), o['width'],
+                                                  self.landmark_depth['gate'] - o['height'] / 2)
         self._seen_t: dict[str, float] = {}
         self._dets: list[Det] = []
         self._det_t = -1.0
@@ -410,7 +416,24 @@ class MarineSimBackend(VehicleBackend):
         x0, x1, y0, y1 = self.fence
         return x0 <= x <= x1 and y0 <= y <= y1
 
-    def _drive(self, token, deadline, tx, ty, tz, tyaw=None, tol=0.3, speed=None, stop_when=None):
+    def _drive_routed(self, token, deadline, tx, ty, tz, tyaw=None, tol=0.3, speed=None, stop_when=None):
+        """Like _drive, but legs that would hit the gate get detour / duck-under waypoints."""
+        from auv_onboard.pathing import plan_legs
+        e = self.est()
+        g = self.g
+        legs = plan_legs((e['x'], e['y']), (tx, ty), -tz, self.gate_obstacle, g.get('gate_clearance_m', 0.65),
+                         g.get('gate_vertical_clearance_m', 0.3))
+        if legs:
+            self.events.append({'t': self.sim.t, 'event': 'route_detour',
+                                'waypoints': [[round(v, 2) for v in w] for w in legs]})
+        for wx, wy, wd in legs:
+            status, _ = self._drive(token, deadline, wx, wy, -wd, None, tol=0.5, speed=speed,
+                                    stop_when=stop_when, settle=False)
+            if status == 'stopped':
+                return status, 0.0
+        return self._drive(token, deadline, tx, ty, tz, tyaw, tol=tol, speed=speed, stop_when=stop_when)
+
+    def _drive(self, token, deadline, tx, ty, tz, tyaw=None, tol=0.3, speed=None, stop_when=None, settle=True):
         """Carrot-follow to (tx, ty, tz) on the estimated pose. Returns ('reached'|'stopped', err)."""
         g = self.g
         speed = min(speed or g['max_speed'], g['max_speed']) * self.speed_scale
@@ -443,6 +466,8 @@ class MarineSimBackend(VehicleBackend):
             err = math.dist((e['x'], e['y'], e['z']), (tx, ty, tz))
             yaw_ok = tyaw is None or abs(wrap(tyaw - e['yaw'])) < 0.2
             if err < tol and yaw_ok:
+                if not settle:                     # intermediate waypoint: pass through, no settle pause
+                    return 'reached', err
                 settled = settled if settled is not None else self.sim.t
                 if self.sim.t - settled >= g['settle_s']:
                     return 'reached', err
@@ -455,7 +480,7 @@ class MarineSimBackend(VehicleBackend):
             return Outcome(False, f'target ({x:.1f},{y:.1f},{depth:.1f}m) outside the safe envelope', 'unsafe_target')
 
         def run(token, deadline):
-            _, err = self._drive(token, deadline, x, y, -depth, yaw, tol=tolerance or 0.3, speed=speed)
+            _, err = self._drive_routed(token, deadline, x, y, -depth, yaw, tol=tolerance or 0.3, speed=speed)
             return Outcome(True, 'reached', data={'final_error_m': round(err, 3)})
         o = self._run_action(run, timeout_s)
         if not o.ok and 'final_error_m' not in o.data:
@@ -529,8 +554,8 @@ class MarineSimBackend(VehicleBackend):
                     hits['t'], hits['n'], hits['det'] = d.t, hits['n'] + 1, d
                 return hits['n'] >= 2
             for wx, wy, wz, wyaw in wps:
-                status, _ = self._drive(token, deadline, wx, wy, wz, wyaw, tol=0.4 if wyaw is None else 0.5,
-                                        stop_when=found)
+                status, _ = self._drive_routed(token, deadline, wx, wy, wz, wyaw, tol=0.4 if wyaw is None else 0.5,
+                                               stop_when=found)
                 if status == 'stopped':
                     self._hold_here()
                     return Outcome(True, f'{target} found after {self.sim.t - start:.0f}s',

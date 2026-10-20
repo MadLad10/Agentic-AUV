@@ -32,6 +32,9 @@ guidance:                      # port of v1's vehicle_server behaviours
   blind_surface_s: 30.0        # ascent time when the depth sensor is untrusted (>= 5 m / 0.3 m/s + margin)
   fence_margin_m: 0.8
   degraded_speed_factor: 0.5   # speed scale in degraded navigation (e.g. DVL dropout)
+  avoid_gate: true             # obstacle-aware legs around the gate (pathing.py)
+  gate_clearance_m: 0.65       # post radius + hull half-diagonal + margin
+  gate_vertical_clearance_m: 0.3   # pass under the crossbar at least this much deeper than it
 
 ekf:
   estimator: ekf               # ekf | fgo (factor graph, GTSAM ISAM2, fgo.py)
