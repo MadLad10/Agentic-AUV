@@ -212,6 +212,8 @@ started, so fault detection can be scored.
 | A ghost-target detector flagged real gate posts in every normal mission | false alarms erode trust | count only sightings that prove the camera can see that far, and exclude gate posts | 0/10 false alarms; ghosts still flagged 10/10 |
 | One code path read the simulator's **true** water visibility, which a real robot cannot know | results would be too optimistic | removed; the robot uses only what its own camera has proven it can see | found and fixed in a self-audit |
 | Five random seeds gave a too-optimistic drift number (0.44 m, against 0.77 m with 20 seeds) | small samples mislead | navigation is measured over 20 seeds | all navigation tables use 20 seeds |
+| After a step had run, a re-plan was rejected (it added a buoy nobody asked for) and the mission **ended with the robot still underwater** | the safety layer blocked the bad plan but did not bring the robot home | once any step has run, a refused or rejected re-plan goes through the safe abort and surfaces | regression test replays the case; the test fails without the fix |
+| The LLM gave "check the battery" the success condition **battery above 100%**, which can never hold | a mission that did what was asked was scored `partial` | the validator repairs conditions that can never be met (here: to the battery floor) | unit-tested |
 | Editing code during an evaluation silently mixed code versions | results were not reproducible | code is frozen during evaluations and its fingerprint is saved with the results | `CODE_STATE.txt` in each evaluation folder |
 
 ## 8. Results
@@ -254,7 +256,8 @@ LLM and VLM.
 | Multi-agent system vs single-agent baseline | 35/36 vs 31/36 | 36/36 for both | the single agent kept driving through a leak and a frozen depth sensor; the multi-agent system surfaced ([results](eval/results/v2_qwen3b/summary.md)) |
 | Before navigation fusion | 36/36 | 36/36 | 10 of 11 faults detected. With the DVL lost or the compass disturbed, the robot ended safely but **without** finishing its task ([results](eval/results/v2_final_qwen3b/summary.md)) |
 | With navigation fusion | 34/36 | 36/36 | every fault task now completed; two new failures (a false success and an over-strict time rule) were fixed as described in section 7 ([results](eval/results/v2_final_fusion_qwen3b/summary.md)) |
-| **Final, with both fixes** | *running* | | results will be added when the run finishes (`eval/results/v2_final_v22_qwen3b/`) |
+| With both fixes | 34/36 | 35/36 | both earlier failures fixed (C3 touched all three buoys; R3 now aborts honestly instead of claiming success); all 8 completable fault tasks done; 10/11 faults detected. Two new failures, both fixed in section 7: **E3** (the LLM set an impossible "battery above 100%" condition, so a done mission was scored `partial`) and **F11** (after a re-plan was rightly rejected, the mission ended with the robot still 1.5 m underwater) ([results](eval/results/v2_final_v22_qwen3b/summary.md)) |
+| **Repeated runs and ablations** | *running* | | 5 seeds of all 36 missions, plus the system without the validator, without the health monitor, without fusion, and the single-agent baseline (3 seeds each); results will be added when the run finishes |
 
 **Detectors and VLM:**
 
@@ -332,7 +335,7 @@ See the [detector study](eval/results/detector_study/summary.md) and the
 - **Infrastructure and testing:**
   - Docker, the Model Context Protocol (MCP) SDK, OpenTelemetry, Jaeger, SQLite (checkpoints), uv;
   - GitHub Actions CI;
-  - pytest: 196 unit tests plus a ROS 2 integration test.
+  - pytest: 201 unit tests plus a ROS 2 integration test.
 - **Hardware:** one laptop with an Intel Core i7-13620H, 15 GB RAM and integrated graphics (no CUDA
   GPU).
 

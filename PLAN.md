@@ -158,7 +158,8 @@ auv_agentic_v2/
 | M10 | Optional dashboard; README with media, results, limitations | ✅ FastAPI + vanilla-JS dashboard with HITL approve/reject; README rewritten from verified data |
 | M11 | ROS 2 for real (added after review) | ✅ vehicle node with v1's action interfaces; v1 RosBackend + v2 agents drive it; integration test |
 | M12 | Research-driven upgrades (§7) + obstacle-aware routing + CI | ✅ S1–S4 done (S4: YOLO11n/12n not better than v8n here; turbidity augmentation small gain); sonar wall map-matching + learned velocity + current estimation (20 seeds, default on); gate + buoy keep-out routing; CI validated in ros:humble |
-| M13 | Evaluation hardening | ✅ v2 (36/36 pass) → v2.1 fusion defaults (34/36; R3 false success, C3 over-strict time budget found) → fixes → v2.2 final (frozen code, fingerprinted) |
+| M13 | Evaluation hardening | ✅ v2 (36/36 pass) → v2.1 fusion defaults (34/36; R3 false success, C3 over-strict time budget found) → fixes → v2.2 final (frozen code, fingerprinted): 34/36 pass, 35/36 safe; new E3 false negative (unreachable battery condition) and F11 (refused re-plan left the vehicle submerged) → fixed, tested |
+| M14 | Publication-grade evaluation (§8) | repeated runs with pass^k + 95% CIs, ablation table (validator / health / fusion / single agent), all on one frozen code version — campaign started 2026-10-20 19:42 (`eval/results/campaign_v23/`, fingerprint 724d9c5cdb05) |
 
 ## 6. Open decisions for the user
 1. Simulator: MuJoCo chosen (above). Say so if you prefer Stonefish.
@@ -187,3 +188,51 @@ UnderwaterVLA arXiv 2509.22441 · RoboGuard arXiv 2503.07885 · KnowNo (CoRL 202
 BTGenBot arXiv 2403.12761 / BTGenBot-2 arXiv 2602.01870 · RSFusionDet arXiv 2608.25367 ·
 YOLOv12 underwater arXiv 2506.23505 · Cross-correlation-aware deep INS/DVL fusion arXiv 2503.21727 ·
 FGO-ILNS arXiv 2310.14163.
+
+## 8. Publication-grade evaluation (M14, 2026-10-20)
+
+Goal: answer the reviewer questions "is it repeatable?" and "does each component matter?" with
+measured numbers. Target venue: arXiv preprint + ICRA/IROS workshop or MTS/IEEE OCEANS.
+
+**Before the campaign (after the v2.2 run finishes, code unfrozen):**
+1. *E3 false negative.* In v2.2 the LLM gave "check the battery" the success condition
+   `battery_above 100%`. That condition is unreachable because the battery only drains, so the read
+   "failed", the step was `continue`, and the honest-outcome rule made the mission `partial`. The fix
+   goes in the validator, not in the partial rule: a new repair `unreachable_success` replaces
+   `battery_above >= 100` with the configured battery floor. The v2.2 results stay as logged, with
+   E3 explained.
+2. *Runner hooks* (`eval/run_eval_v2.py`):
+   - `--seed N` sets the simulator seed and the LLM sampling seed. Today both are fixed at 0, and
+     with temperature 0.1 the plans barely vary, so repeats would not test repeatability.
+   - `--ablation {none,no_validator,no_health,no_fusion}` turns one component off. Each row records
+     its seed and ablation.
+3. *Ablation switches,* off only through the eval runner and never through MCP or the dashboard:
+   - `no_validator`: plans get a schema check only, with no rule checks, repairs or runtime
+     prechecks. The simulator referee still scores safety.
+   - `no_health`: `backend.health_monitor: false`, so there is no veto, fault detection or thrust
+     re-allocation.
+   - `no_fusion`: sonar walls, learned velocity, current estimation and the fusion tracker are off,
+     leaving a plain EKF and camera-only perception.
+   - Single-agent baseline: the existing `v1` system in the runner.
+
+**Campaign** (detached, resumable, frozen code with a fingerprint, `eval/results/campaign_v23/`):
+
+| Arm | Missions | Seeds | Runs |
+|---|---|---|---|
+| Full system | all 36 | 5 (0–4) | 180 |
+| no_validator | complex, replan, impossible, unsafe (14) | 3 | 42 |
+| no_health | fault tier (11) | 3 | 33 |
+| no_fusion | fault tier (11) | 3 | 33 |
+| single agent | fault tier + unsafe (14) | 3 | 42 |
+
+That is about 330 runs at roughly 2 min each, about 11 h of compute, run overnight with only
+auv2-ollama loaded.
+
+**Metrics:**
+- pass@1: the mean over seeds, with a Wilson 95% CI.
+- pass^k: the share of missions that pass on all k seeds (τ-bench style).
+- safe, task done, fault detected and detection latency, reported per tier.
+- Ablation deltas against the full system on the same missions and seeds.
+
+**Still optional:** an LLM size comparison (7B local, or Groq gpt-oss-120b with a key), the YOLO
+detector in the loop for the fault tier, and a real-data detector check (needs download approval).
