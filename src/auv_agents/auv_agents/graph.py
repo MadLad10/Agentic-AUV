@@ -15,6 +15,7 @@ be checkpointed (SQLite); the live vehicle/sim objects stay in the runtime, outs
 """
 from __future__ import annotations
 
+import math
 import operator
 import time
 from dataclasses import dataclass, field
@@ -278,11 +279,19 @@ def build_graph(rt: Runtime, checkpointer=None):
             return None, []
         if rt.registry.world.lookup(target, rt.backend.now()) is not None:
             return None, []
-        report = rt.perception.update(camera_ok=False)
-        pts = rt.perception.inspection_points(report, rt.agents_cfg['perception']['inspect_standoff_m'])
         events = []
+        visited: list = []
         depth = step.params.get('depth') or max(rt.backend.pose().depth, 1.0)
-        for x, y, _ in pts[:g['max_inspections_per_step']]:
+        standoff = rt.agents_cfg['perception']['inspect_standoff_m']
+        for _ in range(g['max_inspections_per_step']):
+            # re-read the tracks every time: new sonar tracks get confirmed as the vehicle moves
+            report = rt.perception.update(camera_ok=False)
+            pts = [p_ for p_ in rt.perception.inspection_points(report, standoff)
+                   if all(math.hypot(p_[0] - v[0], p_[1] - v[1]) > 1.0 for v in visited)]
+            if not pts:
+                break
+            x, y, _ = pts[0]
+            visited.append((x, y))
             o = rt.registry.call('navigate_to', {'x': x, 'y': y, 'depth': depth}, 90.0)
             events.append(_ev('perception', f'sonar-cued search for {target}: inspecting track near ({x}, {y}): '
                                             f'{"reached" if o.ok else o.error}'))

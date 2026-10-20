@@ -49,7 +49,7 @@ def build_runtime(backend, provider, agents_cfg: dict, diag_provider=None, vlm=N
     pcfg = llm_cfg.get('planner', {})
     planner = Planner(provider, reg.schemas(), cfg['limits'], pcfg.get('max_format_retries', 2))
     diag = DiagnosticsAgent(diag_provider, use_llm=agents_cfg['diagnostics'].get('use_llm', True))
-    if vlm is not None and hasattr(vlm, 'warm_up'):
+    if vlm is not None and hasattr(vlm, 'warm_up') and agents_cfg['perception']['vlm'].get('warm_up'):
         vlm.warm_up()
     return Runtime(backend, reg, cfg, agents_cfg, planner, diag, vlm=vlm, auto_approve=auto_approve, log=log)
 

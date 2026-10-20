@@ -18,7 +18,9 @@ if docker ps --format '{{.Names}}' | grep -qx "$NAME"; then
 elif docker ps -a --format '{{.Names}}' | grep -qx "$NAME"; then
   docker start "$NAME" >/dev/null
 else
-  docker run -d --name "$NAME" --restart no --memory "$MEM" -p 127.0.0.1:${PORT}:11434 \
+  # one model in memory at a time: planner LLM and VLM together exceeded the memory cap (runner OOM-killed)
+  docker run -d --name "$NAME" --restart no --memory "$MEM" -e OLLAMA_MAX_LOADED_MODELS=1 \
+    -e OLLAMA_KEEP_ALIVE=10m -p 127.0.0.1:${PORT}:11434 \
     -v auv2-ollama:/root/.ollama "$IMAGE" >/dev/null
 fi
 for _ in $(seq 1 30); do curl -sf localhost:${PORT}/api/version >/dev/null && break; sleep 1; done
