@@ -1,0 +1,522 @@
+[
+ {
+  "condition": "turbidity_touch_red",
+  "tracking": false,
+  "seed": 0,
+  "outcome": "aborted",
+  "task": false,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 417.2,
+  "wall_s": 17.6,
+  "replans": 2,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": [
+   "turbidity"
+  ]
+ },
+ {
+  "condition": "turbidity_touch_red",
+  "tracking": false,
+  "seed": 1,
+  "outcome": "aborted",
+  "task": false,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 417.2,
+  "wall_s": 17.3,
+  "replans": 2,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": [
+   "turbidity"
+  ]
+ },
+ {
+  "condition": "turbidity_touch_red",
+  "tracking": false,
+  "seed": 2,
+  "outcome": "aborted",
+  "task": false,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 417.2,
+  "wall_s": 19.2,
+  "replans": 2,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": [
+   "turbidity"
+  ]
+ },
+ {
+  "condition": "turbidity_touch_red",
+  "tracking": false,
+  "seed": 3,
+  "outcome": "aborted",
+  "task": false,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 417.2,
+  "wall_s": 19.2,
+  "replans": 2,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": [
+   "turbidity"
+  ]
+ },
+ {
+  "condition": "turbidity_touch_red",
+  "tracking": false,
+  "seed": 4,
+  "outcome": "aborted",
+  "task": false,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 417.05,
+  "wall_s": 19.4,
+  "replans": 2,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": [
+   "turbidity"
+  ]
+ },
+ {
+  "condition": "turbidity_touch_red",
+  "tracking": true,
+  "seed": 0,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 13,
+  "sim_s": 102.95,
+  "wall_s": 4.9,
+  "replans": 1,
+  "inspections": 3,
+  "false_target_flagged": false,
+  "health_faults": [
+   "turbidity"
+  ]
+ },
+ {
+  "condition": "turbidity_touch_red",
+  "tracking": true,
+  "seed": 1,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 9,
+  "sim_s": 56.25,
+  "wall_s": 2.8,
+  "replans": 1,
+  "inspections": 2,
+  "false_target_flagged": false,
+  "health_faults": [
+   "turbidity"
+  ]
+ },
+ {
+  "condition": "turbidity_touch_red",
+  "tracking": true,
+  "seed": 2,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 87.3,
+  "wall_s": 4.2,
+  "replans": 1,
+  "inspections": 3,
+  "false_target_flagged": false,
+  "health_faults": [
+   "turbidity"
+  ]
+ },
+ {
+  "condition": "turbidity_touch_red",
+  "tracking": true,
+  "seed": 3,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 5,
+  "sim_s": 51.55,
+  "wall_s": 2.5,
+  "replans": 1,
+  "inspections": 2,
+  "false_target_flagged": false,
+  "health_faults": [
+   "turbidity"
+  ]
+ },
+ {
+  "condition": "turbidity_touch_red",
+  "tracking": true,
+  "seed": 4,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 5,
+  "sim_s": 51.25,
+  "wall_s": 2.5,
+  "replans": 1,
+  "inspections": 2,
+  "false_target_flagged": false,
+  "health_faults": [
+   "turbidity"
+  ]
+ },
+ {
+  "condition": "false_target_gate",
+  "tracking": false,
+  "seed": 0,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 39.9,
+  "wall_s": 1.9,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": []
+ },
+ {
+  "condition": "false_target_gate",
+  "tracking": false,
+  "seed": 1,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 40.0,
+  "wall_s": 1.8,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": []
+ },
+ {
+  "condition": "false_target_gate",
+  "tracking": false,
+  "seed": 2,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 40.05,
+  "wall_s": 1.9,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": []
+ },
+ {
+  "condition": "false_target_gate",
+  "tracking": false,
+  "seed": 3,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 39.85,
+  "wall_s": 1.9,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": []
+ },
+ {
+  "condition": "false_target_gate",
+  "tracking": false,
+  "seed": 4,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 40.05,
+  "wall_s": 2.0,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": []
+ },
+ {
+  "condition": "false_target_gate",
+  "tracking": true,
+  "seed": 0,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 39.7,
+  "wall_s": 2.0,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": true,
+  "health_faults": [
+   "sonar_false_target"
+  ]
+ },
+ {
+  "condition": "false_target_gate",
+  "tracking": true,
+  "seed": 1,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 39.9,
+  "wall_s": 2.0,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": true,
+  "health_faults": [
+   "sonar_false_target"
+  ]
+ },
+ {
+  "condition": "false_target_gate",
+  "tracking": true,
+  "seed": 2,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 39.95,
+  "wall_s": 2.1,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": true,
+  "health_faults": [
+   "sonar_false_target"
+  ]
+ },
+ {
+  "condition": "false_target_gate",
+  "tracking": true,
+  "seed": 3,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 39.9,
+  "wall_s": 2.0,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": true,
+  "health_faults": [
+   "sonar_false_target"
+  ]
+ },
+ {
+  "condition": "false_target_gate",
+  "tracking": true,
+  "seed": 4,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 40.0,
+  "wall_s": 2.0,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": true,
+  "health_faults": [
+   "sonar_false_target"
+  ]
+ },
+ {
+  "condition": "nominal_gate_red_green",
+  "tracking": false,
+  "seed": 0,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 74.2,
+  "wall_s": 3.6,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": true,
+  "health_faults": [
+   "sonar_false_target"
+  ]
+ },
+ {
+  "condition": "nominal_gate_red_green",
+  "tracking": false,
+  "seed": 1,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 74.45,
+  "wall_s": 3.5,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": true,
+  "health_faults": [
+   "sonar_false_target"
+  ]
+ },
+ {
+  "condition": "nominal_gate_red_green",
+  "tracking": false,
+  "seed": 2,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 74.8,
+  "wall_s": 3.5,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": true,
+  "health_faults": [
+   "sonar_false_target"
+  ]
+ },
+ {
+  "condition": "nominal_gate_red_green",
+  "tracking": false,
+  "seed": 3,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 74.15,
+  "wall_s": 3.5,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": true,
+  "health_faults": [
+   "sonar_false_target"
+  ]
+ },
+ {
+  "condition": "nominal_gate_red_green",
+  "tracking": false,
+  "seed": 4,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 74.4,
+  "wall_s": 3.5,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": true,
+  "health_faults": [
+   "sonar_false_target"
+  ]
+ },
+ {
+  "condition": "nominal_gate_red_green",
+  "tracking": true,
+  "seed": 0,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 74.05,
+  "wall_s": 3.8,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": []
+ },
+ {
+  "condition": "nominal_gate_red_green",
+  "tracking": true,
+  "seed": 1,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 74.35,
+  "wall_s": 3.8,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": []
+ },
+ {
+  "condition": "nominal_gate_red_green",
+  "tracking": true,
+  "seed": 2,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 73.9,
+  "wall_s": 3.6,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": []
+ },
+ {
+  "condition": "nominal_gate_red_green",
+  "tracking": true,
+  "seed": 3,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 73.65,
+  "wall_s": 4.0,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": []
+ },
+ {
+  "condition": "nominal_gate_red_green",
+  "tracking": true,
+  "seed": 4,
+  "outcome": "succeeded",
+  "task": true,
+  "wrong_touch": [],
+  "surfaced": true,
+  "collisions": 0,
+  "sim_s": 73.8,
+  "wall_s": 3.8,
+  "replans": 0,
+  "inspections": 0,
+  "false_target_flagged": false,
+  "health_faults": []
+ }
+]
