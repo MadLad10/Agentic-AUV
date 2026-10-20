@@ -15,17 +15,19 @@ pytestmark = pytest.mark.ros
 
 
 @pytest.fixture
-def vehicle():
-    env = dict(os.environ, ROS_DOMAIN_ID='77', ROS_LOCALHOST_ONLY='1')
+def vehicle(tmp_path):
+    # identical discovery settings for the vehicle and this test process (set before rclpy starts)
+    os.environ.update(ROS_DOMAIN_ID='77', ROS_LOCALHOST_ONLY='1')
+    log = open(tmp_path / 'vehicle.log', 'w')      # a file, not an unread pipe that could fill and block
     p = subprocess.Popen([sys.executable, '-m', 'auv_onboard.ros_node', '--ros-args', '-p', 'rtf:=6.0'],
-                         env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
-    os.environ['ROS_DOMAIN_ID'] = '77'
-    yield p
+                         env=dict(os.environ), stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+    yield p, tmp_path / 'vehicle.log'
     os.killpg(p.pid, signal.SIGINT)
     try:
         p.wait(timeout=15)
     except subprocess.TimeoutExpired:
         os.killpg(p.pid, signal.SIGKILL)
+    log.close()
 
 
 def test_v1_ros_backend_drives_mujoco_vehicle(vehicle):
@@ -36,7 +38,8 @@ def test_v1_ros_backend_drives_mujoco_vehicle(vehicle):
     cfg = load_config()
     be = RosBackend(cfg)
     try:
-        assert be.wait_ready(60), 'vehicle node not ready'
+        _, log = vehicle
+        assert be.wait_ready(90), 'vehicle node not ready; its log:\n' + log.read_text()[-3000:]
         reg = ToolRegistry(be, cfg)
         for name, params, to in [('navigate_to', {'x': 2.0, 'y': 0.0, 'depth': 1.5}, 60),
                                  ('navigate_to', {'target': 'gate'}, 120), ('surface', {}, 90)]:

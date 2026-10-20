@@ -1,0 +1,42 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-22.04
+    container: ros:humble
+    timeout-minutes: 30
+    env:
+      MUJOCO_GL: osmesa          # software rendering: CI machines have no GPU
+      PYOPENGL_PLATFORM: osmesa
+    steps:
+      - uses: actions/checkout@v4
+      - name: System packages
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3-pip libosmesa6 libgl1-mesa-dri \
+            ros-humble-nav-msgs ros-humble-sensor-msgs ros-humble-std-srvs ros-humble-rosgraph-msgs
+      - name: Python packages
+        run: |
+          pip install --no-cache-dir "numpy==1.26.4" "pytest==7.4.4" "pydantic>=2.7" pyyaml pillow \
+            "mujoco>=3.3" "langgraph>=1.0" langchain-core langgraph-checkpoint-sqlite "mcp>=1.10" httpx \
+            opentelemetry-sdk opentelemetry-exporter-otlp-proto-http scipy fastapi uvicorn "gtsam==4.2"
+      - name: Build
+        shell: bash
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --symlink-install
+      - name: Unit tests (no LLM, no Gazebo; torch/YOLO tests skip without weights)
+        shell: bash
+        run: |
+          source /opt/ros/humble/setup.bash && source install/setup.bash
+          python3 -m pytest -q -m "not integration and not llm and not ros"
+      - name: ROS 2 integration test (vehicle node in a subprocess)
+        shell: bash
+        run: |
+          source /opt/ros/humble/setup.bash && source install/setup.bash
+          python3 -m pytest -q -m ros tests/integration/test_ros2_vehicle.py -p no:warnings
