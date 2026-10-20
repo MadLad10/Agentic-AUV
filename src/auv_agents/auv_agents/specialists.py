@@ -51,6 +51,8 @@ class PerceptionAgent:
         return best
 
     def update(self, camera_ok: bool = True) -> dict:
+        if getattr(self.be, 'tracker', None) is not None:
+            return self._update_tracked()
         be = self.be
         t = be.now()
         est = be.est()
@@ -91,7 +93,10 @@ class PerceptionAgent:
                                            0.0, t)])
                 unmatched = [c for c in unmatched if c is not a and c is not b]
         # unconfirmed sonar contacts: inside the camera's good range and FOV but not seen by it
-        vis = be.sim.visible_range()
+        # the vehicle's OWN visibility belief (never the simulator's ground truth)
+        tc = be.cfg.get('tracking', {})
+        faults = be.health.last.types() if be.health_enabled else set()
+        vis = tc.get('camera_degraded_visibility_m', 2.5) if 'turbidity' in faults else tc.get('camera_nominal_visibility_m', 9.0)
         suspects = []
         for c in unmatched:
             key = (round(c.x), round(c.y))
@@ -112,6 +117,32 @@ class PerceptionAgent:
         return {'t': round(t, 2), 'tracks': tracks, 'remembered': world,
                 'unclassified_sonar_contacts': inspect[:6], 'suspected_false_targets': suspects,
                 'sonar_only_gate': sonar_gate is not None, 'camera_visibility_m': round(vis, 1)}
+
+    def _update_tracked(self) -> dict:
+        """Perception from the onboard camera-sonar fusion tracker."""
+        be = self.be
+        t = be.now()
+        est = be.est()
+        tk = be.tracker
+        tracks = [tr.as_dict() for tr in tk.confirmed() if tr.kind != 'gate_post']
+        gate_w = next((o.get('width', 2.0) for o in be.sim.arena['objects'] if o['class'] == 'gate'), 2.0)
+        sonar_gate = None
+        if not any(tr['class'] == 'gate' for tr in tracks):
+            c = tk.sonar_gate(gate_w, self.cfg['gate_pair_tolerance_m'])
+            if c is not None:
+                gd = be.landmark_depth.get('gate', -est['z'])          # course-map depth prior (2D sonar)
+                sonar_gate = {'class': 'gate', 'x': round(float(c[0]), 2), 'y': round(float(c[1]), 2),
+                              'depth': round(gd, 2), 'confidence': 0.6, 'sources': ['sonar']}
+                tracks.append(sonar_gate)
+                self.reg.world.update([Det('gate', 0.6, float(c[0]), float(c[1]), gd,
+                                           math.hypot(c[0] - est['x'], c[1] - est['y']), 0.0, t)])
+        rng = lambda tr: round(math.hypot(tr.x[0] - est['x'], tr.x[1] - est['y']), 2)
+        return {'t': round(t, 2), 'tracks': tracks, 'remembered': self.reg.world.summary(t),
+                'unclassified_sonar_contacts': [{'x': round(float(tr.x[0]), 2), 'y': round(float(tr.x[1]), 2),
+                                                 'range_m': rng(tr), 'track': tr.id} for tr in tk.unclassified()][:6],
+                'suspected_false_targets': [{'x': round(float(tr.x[0]), 2), 'y': round(float(tr.x[1]), 2),
+                                             'range_m': rng(tr), 'track': tr.id} for tr in tk.false_target_suspects()],
+                'sonar_only_gate': sonar_gate is not None, 'fusion': 'camera+sonar tracker'}
 
     def inspection_points(self, report: dict, standoff: float) -> list[tuple]:
         """Waypoints `standoff` metres short of each unclassified contact (nearest first)."""
@@ -259,6 +290,8 @@ class DiagnosticsAgent:
 
 
 def telemetry_snapshot(backend) -> dict:
+    if not hasattr(backend.sim, 'readings'):       # agents over ROS 2: the vehicle's /auv/telemetry
+        return {**getattr(backend, 'telemetry', {}), 'ekf': backend.ekf.summary()}
     r = backend.sim.readings
     th = r.get('thrusters', {})
     return {

@@ -49,6 +49,8 @@ def build_runtime(backend, provider, agents_cfg: dict, diag_provider=None, vlm=N
     pcfg = llm_cfg.get('planner', {})
     planner = Planner(provider, reg.schemas(), cfg['limits'], pcfg.get('max_format_retries', 2))
     diag = DiagnosticsAgent(diag_provider, use_llm=agents_cfg['diagnostics'].get('use_llm', True))
+    if vlm is not None and hasattr(vlm, 'warm_up'):
+        vlm.warm_up()
     return Runtime(backend, reg, cfg, agents_cfg, planner, diag, vlm=vlm, auto_approve=auto_approve, log=log)
 
 
@@ -110,6 +112,19 @@ def _stream(graph, inp, config, on_event, approve_fn, tid):
     return final
 
 
+def referee_over_ros(be) -> dict:
+    """Ground-truth referee report from the vehicle node (evaluation only)."""
+    from std_srvs.srv import Trigger
+    cli = be.node.create_client(Trigger, '/auv_sim/referee_report')
+    if not cli.wait_for_service(timeout_sec=5.0):
+        return {}
+    fut = cli.call_async(Trigger.Request())
+    t_end = time.time() + 10
+    while not fut.done() and time.time() < t_end:
+        time.sleep(0.05)
+    return json.loads(fut.result().message) if fut.done() else {}
+
+
 def _parse_fault(s):
     parts = s.split(':')
     f = {'type': parts[0], 't_start': float(parts[1]) if len(parts) > 1 else 0.0, 'params': {}}
@@ -133,6 +148,8 @@ def main():
     ap.add_argument('--nav', default='ekf')
     ap.add_argument('--detector', default='ground_truth')
     ap.add_argument('--seed', type=int, default=0)
+    ap.add_argument('--ros', action='store_true', help='drive the ROS 2 vehicle node (separate process) '
+                                                      'instead of an in-process sim')
     a = ap.parse_args()
     from auv_agents import telemetry
     telemetry.maybe_init_from_env()
@@ -144,8 +161,16 @@ def main():
     llm_cfg = load_llm_config()
     prov = make_provider(llm_cfg, a.provider or acfg['supervisor']['provider'])
     diag = make_provider(llm_cfg, a.provider or acfg['diagnostics']['provider'])
-    be = make_backend(a.arena, faults=[_parse_fault(f) for f in a.fault], seed=a.seed,
-                      onboard_overrides={'backend': {'nav_source': a.nav, 'detection_source': a.detector}})
+    if a.ros:
+        from auv_agents.ros_vehicle import RosVehicle
+        from auv_mission_planner.config import load_config
+        be = RosVehicle(load_config(), a.arena)
+        if not be.wait_ready(60):
+            print('[run] vehicle node not ready (start: python -m auv_onboard.ros_node)', file=sys.stderr)
+            return 2
+    else:
+        be = make_backend(a.arena, faults=[_parse_fault(f) for f in a.fault], seed=a.seed,
+                          onboard_overrides={'backend': {'nav_source': a.nav, 'detection_source': a.detector}})
     rt = build_runtime(be, prov, acfg, diag, make_vlm(acfg['perception']['vlm']),
                        auto_approve=acfg['graph']['approval'] == 'auto')
 
@@ -158,8 +183,8 @@ def main():
         return {'decision': 'approve' if ans == 'y' else 'reject'}
     try:
         res = run_mission(rt, a.prompt, on_event=on_event, approve_fn=approve)
-        rep = be.sim.referee.report()
-        rep.pop('events')
+        rep = be.sim.referee.report() if hasattr(be.sim, 'referee') else referee_over_ros(be)
+        rep.pop('events', None)
         print(json.dumps({'outcome': res.get('outcome'), 'reason': res.get('reason'), 'stats': res.get('stats'),
                           'referee': rep}, indent=1, default=str))
     finally:

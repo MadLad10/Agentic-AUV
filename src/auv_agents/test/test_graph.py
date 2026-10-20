@@ -23,9 +23,10 @@ SURF = {'tool': 'surface', 'timeout_s': 90, 'success': {'type': 'surfaced'}, 'on
 PROMPT = 'pass through the gate, touch the red buoy, then surface'
 
 
-def setup(responses, faults=None, approval='auto', vlm=None, diag_llm=None, **ob):
+def setup(responses, faults=None, approval='auto', vlm=None, diag_llm=None, tracking_on=True, **ob):
     be = make_backend('default', faults=faults or [], seed=0,
-                      onboard_overrides={'backend': {'max_rtf': None, 'idle_rtf': None, **ob}})
+                      onboard_overrides={'backend': {'max_rtf': None, 'idle_rtf': None, **ob},
+                                         'tracking': {'enabled': tracking_on}})
     acfg = load_agents_config({'graph': {'approval': approval}, 'diagnostics': {'use_llm': diag_llm is not None}})
     rt = build_runtime(be, MockProvider(responses=responses), acfg, diag_llm, vlm, auto_approve=approval == 'auto')
     return be, rt
@@ -136,14 +137,28 @@ def test_camera_blackout_diagnosed_replanned_gate_found_by_sonar():
         be.shutdown()
 
 
-def test_turbidity_search_fails_vlm_queried_and_sonar_cued_inspection():
-    vlm = MockVLM()
+def test_turbidity_sonar_cued_search_touches_red_buoy():
+    """Fusion tracking on (default): the perception agent visits sonar tracks until the camera
+    classifies the red buoy, instead of a blind search."""
     be, rt = setup([P([DIVE, SEARCH_RED, RED, SURF])] + [P([SEARCH_RED, RED, SURF])] * 2 + [P([SURF])] * 3,
-                   faults=[{'type': 'turbidity', 't_start': 0.0, 'params': {'visibility_m': 2.0}}], vlm=vlm)
+                   faults=[{'type': 'turbidity', 't_start': 0.0, 'params': {'visibility_m': 2.5}}])
     try:
         res = run_mission(rt, 'touch the red buoy then surface')
+        r = be.sim.referee.report()
+        assert res['outcome'] == 'succeeded' and r['touch_order'][:1] == ['red_buoy'], (res.get('reason'), r['touch_order'])
+        assert res['stats'].get('inspections', 0) >= 1 and r['surfaced_at_end']
+    finally:
+        be.shutdown()
+
+
+def test_failed_search_queries_vlm_when_tracking_is_off():
+    vlm = MockVLM()
+    be, rt = setup([P([DIVE, SEARCH_RED, RED, SURF])] + [P([SEARCH_RED, RED, SURF])] * 2 + [P([SURF])] * 3,
+                   faults=[{'type': 'turbidity', 't_start': 0.0, 'params': {'visibility_m': 2.0}}], vlm=vlm,
+                   tracking_on=False)
+    try:
+        run_mission(rt, 'touch the red buoy then surface')
         assert rt.perception.vlm_log and rt.perception.vlm_log[0]['answer']
-        assert res['stats'].get('inspections', 0) >= 1
         assert be.sim.referee.report()['surfaced_at_end']
     finally:
         be.shutdown()

@@ -58,8 +58,22 @@ class OllamaVLM:
     def __init__(self, model: str, timeout_s: float, host: str):
         self.model, self.timeout, self.host = model, timeout_s, host.rstrip('/')
 
+    def warm_up(self):
+        """Load the model now (~40 s on CPU) so mission-time queries fit the latency budget."""
+        import threading
+
+        def go():
+            try:
+                body = {'model': self.model, 'stream': False, 'keep_alive': '30m',
+                        'messages': [{'role': 'user', 'content': 'ok'}], 'options': {'num_predict': 1}}
+                _post(f'{self.host}/api/chat', body, {}, 180)
+            except Exception:
+                pass
+        threading.Thread(target=go, daemon=True).start()
+
     def describe(self, img, question):
-        body = {'model': self.model, 'stream': False, 'options': {'temperature': 0.1, 'num_predict': 120},
+        body = {'model': self.model, 'stream': False, 'keep_alive': '30m',
+                'options': {'temperature': 0.1, 'num_predict': 120},
                 'messages': [{'role': 'system', 'content': PROMPT},
                              {'role': 'user', 'content': question, 'images': [_jpeg_b64(img, 384)]}]}
         r = _post(f'{self.host}/api/chat', body, {}, self.timeout)

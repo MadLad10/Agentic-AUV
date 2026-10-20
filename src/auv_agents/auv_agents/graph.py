@@ -240,16 +240,21 @@ def build_graph(rt: Runtime, checkpointer=None):
                     trip['reason'] = r
                     b.cancel_all()
         be.tick_hooks.append(hook)
+        cued = []
         try:
-            obs = rt.registry.call(step.tool, step.params, step.timeout_s)
+            obs = None
+            if step.tool == 'search_pattern':
+                obs, cued = sonar_cued_search(state, step)
+            if obs is None:
+                obs = rt.registry.call(step.tool, step.params, step.timeout_s)
         finally:
             be.tick_hooks.remove(hook)
         ok, detail = rt.executor.evaluate(step, obs)
         rec = {'plan_index': state.get('plan_index', 0), 'step': step.model_dump(), 'observation': obs.model_dump(),
                'success': ok, 'detail': detail, 'sim_end': round(be.now(), 2)}
-        upd = {'mission_t0': t0, 'records': [rec], 'stats': stats(state, steps_executed=1),
-               'events': [_ev('executor', f'step {step.id} {step.tool} {"ok" if ok else "FAILED"}: {detail}'
-                              + ('' if ok else f' [{obs.error_code}] {obs.error or ""}'))]}
+        upd = {'mission_t0': t0, 'records': [rec], 'stats': stats(state, steps_executed=1, inspections=len(cued)),
+               'events': cued + [_ev('executor', f'step {step.id} {step.tool} {"ok" if ok else "FAILED"}: {detail}'
+                                     + ('' if ok else f' [{obs.error_code}] {obs.error or ""}'))]}
         if trip:
             return {**upd, 'phase': 'abort', 'reason': trip['reason']}
         if ok or step.on_failure == 'continue':
@@ -261,6 +266,32 @@ def build_graph(rt: Runtime, checkpointer=None):
         if step.on_failure == 'abort' or step.tool == 'abort':
             return {**upd, 'phase': 'abort', 'failed': failed, 'reason': f'step {step.id} ({step.tool}) failed: {detail}'}
         return {**upd, 'phase': 'step_failed', 'failed': failed}
+
+    def sonar_cued_search(state, step):
+        """Perception agent's search policy: with a degraded camera, visit unlabelled sonar buoy tracks
+        (nearest first) so the camera can classify them, instead of a blind pattern. Returns
+        (observation or None to fall back to the planned pattern, events)."""
+        target = step.params.get('target')
+        faults = {f['type'] for f in (state.get('health') or {}).get('faults', [])}
+        tk = getattr(rt.backend, 'tracker', None)
+        if tk is None or not faults & {'turbidity', 'camera_blackout'} or 'camera_blackout' in faults:
+            return None, []
+        if rt.registry.world.lookup(target, rt.backend.now()) is not None:
+            return None, []
+        report = rt.perception.update(camera_ok=False)
+        pts = rt.perception.inspection_points(report, rt.agents_cfg['perception']['inspect_standoff_m'])
+        events = []
+        depth = step.params.get('depth') or max(rt.backend.pose().depth, 1.0)
+        for x, y, _ in pts[:g['max_inspections_per_step']]:
+            o = rt.registry.call('navigate_to', {'x': x, 'y': y, 'depth': depth}, 90.0)
+            events.append(_ev('perception', f'sonar-cued search for {target}: inspecting track near ({x}, {y}): '
+                                            f'{"reached" if o.ok else o.error}'))
+            o2 = rt.registry.call('search_pattern', {'target': target, 'pattern': 'yaw_sweep', 'radius_m': 2.0,
+                                                     'depth': depth}, 40.0)
+            if o2.ok:
+                events.append(_ev('perception', f'{target} classified by the camera at close range'))
+                return o2, events
+        return None, events
 
     def monitor(state):
         h = rt.health.update(state.get('plan'), state.get('mission_t0'))
@@ -367,7 +398,10 @@ def build_graph(rt: Runtime, checkpointer=None):
             return 'execute_step' if state['step_idx'] < len(plan['steps']) else 'finish'
         if phase == 'step_failed':
             code = (state['failed'].get('result') or {}).get('error_code')
-            if code in RETRY_CODES and state.get('inspections', 0) < g['max_inspections_per_step'] and \
+            target = (state['failed'].get('step') or {}).get('params', {}).get('target')
+            # sonar-cued inspection when an object target was not found (or a blind search timed out)
+            inspectable = code in RETRY_CODES or (code == 'timeout' and target not in (None, 'gate'))
+            if inspectable and state.get('inspections', 0) < g['max_inspections_per_step'] and \
                     rt.perception.inspection_points(state['perception'], 1.5):
                 return 'inspect'
             return 'replan' if state.get('replans', 0) < max_replans else 'abort'

@@ -20,7 +20,7 @@ perception:
   false_target_max_range_frac: 0.6   # ... while inside this fraction of the camera's visible range
   inspect_standoff_m: 1.5       # sonar-cued inspection: stop this far from an unclassified contact
   vlm:
-    provider: none              # none | mock | groq | ollama
+    provider: ollama            # none | mock | groq | ollama (local moondream in auv2-ollama)
     timeout_s: 25.0             # latency budget per query; slower answers are discarded
     groq_model: meta-llama/llama-4-scout-17b-16e-instruct
     ollama_model: moondream

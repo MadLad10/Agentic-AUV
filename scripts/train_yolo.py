@@ -22,10 +22,13 @@ def main():
     ap.add_argument('--threads', type=int, default=8)
     ap.add_argument('--name', default='synth_v1')
     ap.add_argument('--out', default='data/models')
+    ap.add_argument('--weights-name', default='auv_yolov8n_synth.pt')
+    ap.add_argument('--arch', default='yolov8n.yaml')
+    ap.add_argument('--eval-name', default='yolo_eval.json')
     ap.add_argument('--eval-only', default=None, help='evaluate these weights on the val split, no training')
     a = ap.parse_args()
     if a.eval_only:
-        dst = os.path.join(a.out, 'auv_yolov8n_synth.pt')
+        dst = os.path.join(a.out, a.weights_name)
         if os.path.abspath(a.eval_only) != os.path.abspath(dst):
             shutil.copy(a.eval_only, dst)
         return evaluate(dst, a)
@@ -33,7 +36,7 @@ def main():
     torch.set_num_threads(a.threads)
     from ultralytics import YOLO
     os.makedirs(a.out, exist_ok=True)
-    model = YOLO('yolov8n.yaml')                 # architecture only: random init, nothing downloaded
+    model = YOLO(a.arch)                         # architecture only: random init, nothing downloaded
     t0 = time.time()
     model.train(data=a.data, epochs=a.epochs, imgsz=a.imgsz, batch=a.batch, device='cpu', workers=4,
                 plots=False, amp=False, pretrained=False, project='runs_yolo', name=a.name, exist_ok=True,
@@ -41,7 +44,7 @@ def main():
                 hsv_h=0.01, hsv_s=0.4, hsv_v=0.3, fliplr=0.5, mosaic=1.0, close_mosaic=5)
     train_s = time.time() - t0
     best = str(model.trainer.best)               # ultralytics decides the run dir (runs/detect/...)
-    dst = os.path.join(a.out, 'auv_yolov8n_synth.pt')
+    dst = os.path.join(a.out, a.weights_name)
     shutil.copy(best, dst)
     evaluate(dst, a, train_s)
 
@@ -58,7 +61,7 @@ def evaluate(dst, a, train_s=None):
            'precision': round(float(m.box.mp), 4), 'recall': round(float(m.box.mr), 4),
            'per_class_mAP50_95': per_class,
            'speed_ms_per_img': {k: round(v, 2) for k, v in m.speed.items()}}
-    with open(os.path.join(a.out, 'yolo_eval.json'), 'w') as f:
+    with open(os.path.join(a.out, a.eval_name), 'w') as f:
         json.dump(res, f, indent=1)
     print(json.dumps(res, indent=1))
 
