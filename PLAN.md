@@ -148,14 +148,16 @@ auv_agentic_v2/
 |---|---|---|
 | M1 | v2 workspace from v1, uv venv, CLAUDE.md, PLAN.md | colcon build ok, 130 tests pass ✅ |
 | M2 | MuJoCo sim + sensors + fault injection + referee + backend | scripted gate → buoy → surface passes on ground-truth nav; each sensor/fault unit-tested ✅ |
-| M3 | EKF + localisation metrics | same run on EKF nav; RMSE reported nominal vs DVL dropout ✅ (0.09 m vs 0.56 m) |
-| M4 | synthetic dataset, YOLO trained, mAP, perception fusion | mAP@0.5 on held-out synthetic set reported; detector `yolo` passes M2 run (dataset ✅, training running) |
-| M5 | VLM (Groq vision or small local) with latency budget | scene description + failure explanation, latency logged (client + mock wired in; real model pending key / RAM) |
-| M6 | LangGraph graph: supervisor, specialists, HITL, checkpointing | graph runs missions in sim; interrupt/resume test; checkpoint resume test ✅ (mock LLM) |
+| M3 | EKF + localisation metrics | ✅ 20-seed study: nominal 0.16 m; DVL dropout 0.77 m (EKF) → 0.19 m with the learned velocity model; factor graph = negative result |
+| M4 | synthetic dataset, YOLO trained, mAP, perception fusion | ✅ YOLOv8n from scratch mAP@0.5 0.944; closed-loop run with YOLO; camera–sonar fusion tracker (murky water 0/5 → 5/5); sonar images + sonar detector (training queued) |
+| M5 | VLM (Groq vision or small local) with latency budget | ✅ local moondream in auv2-ollama, 25 s budget + warm-up; benchmark vs YOLO running (finding: empty answers to yes/no questions) |
+| M6 | LangGraph graph: supervisor, specialists, HITL, checkpointing | ✅ in-process and over ROS 2 (separate agents process); interrupt/resume + SQLite checkpoint tests |
 | M7 | MCP server | MCP client test: unsafe call rejected, safe call executes ✅ |
 | M8 | Observability | OTel spans exported, viewable in self-hosted UI ✅ (Jaeger all-in-one; Langfuse rejected: needs Postgres+ClickHouse+Redis+MinIO, too heavy for shared RAM) |
-| M9 | Eval: v1 vs v2 on 25 missions + fault tier | Markdown + CSV tables (harness ✅, qwen2.5:3b run in progress) |
-| M10 | Optional dashboard; README with media, results, limitations | |
+| M9 | Eval: v1 vs v2 on 25 missions + fault tier | ✅ v1 vs v2 snapshot (72 runs: v2 35/36, v1 31/36); v2-only final run on the final stack queued (user decision: no new v1 runs) |
+| M10 | Optional dashboard; README with media, results, limitations | ✅ FastAPI + vanilla-JS dashboard with HITL approve/reject; README rewritten from verified data |
+| M11 | ROS 2 for real (added after review) | ✅ vehicle node with v1's action interfaces; v1 RosBackend + v2 agents drive it; integration test |
+| M12 | Research-driven upgrades (§7) + obstacle-aware routing + CI | ✅ S1–S3 done, S4 partly; gate-collision fix; GitHub Actions workflow (validated locally in ros:humble) |
 
 ## 6. Open decisions for the user
 1. Simulator: MuJoCo chosen (above). Say so if you prefer Stonefish.

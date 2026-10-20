@@ -1,0 +1,59 @@
+{
+ "gif": "docs/media/v2_turbidity_sonar_cued.gif",
+ "png": "docs/media/v2_turbidity_sonar_cued_nav.png",
+ "frames": 85,
+ "steps": [
+  "[perception] 0 tracks, 0 unclassified sonar contacts",
+  "[navigation] nav mode nominal",
+  "[supervisor] plan: hold_depth -> search_pattern -> navigate_to -> surface",
+  "[safety_validator] plan OK",
+  "[operator] plan auto-approved",
+  "[executor] step 1 hold_depth ok: depth 1.53 vs 1.5 \u00b1 0.4",
+  "[health] new faults: ['turbidity']; degraded modes ['low_visibility']",
+  "[diagnostics] [rules] ['turbidity'] -> low_visibility, action replan: image washed out to the water colour for 3 frames (dev 3.3)",
+  "[supervisor] replanning (1/2): not executed: faults ['turbidity'] detected; degraded mode low_visibility; image washed out to the water colour for 3 frames (dev 3.3)",
+  "[supervisor] replan: search_pattern -> navigate_to -> surface",
+  "[safety_validator] plan OK",
+  "[operator] plan auto-approved",
+  "[perception] sonar-cued search for red_buoy: inspecting track near (12.48, 1.94): reached",
+  "[perception] sonar-cued search for red_buoy: inspecting track near (13.44, -0.5): reached",
+  "[perception] red_buoy classified by the camera at close range",
+  "[executor] step 1 search_pattern ok: red_buoy detected",
+  "[executor] step 2 navigate_to ok: tool reported ok",
+  "[executor] step 3 surface ok: depth 0.14",
+  "[supervisor] mission finished: succeeded",
+  "outcome: succeeded"
+ ],
+ "faults": [
+  "turbidity:0:visibility_m=2.5"
+ ],
+ "mode": "graph+replayed LLM plans",
+ "referee": {
+  "gate_passed": false,
+  "buoys_touched": [
+   "red_buoy"
+  ],
+  "touch_order": [
+   "red_buoy"
+  ],
+  "surfaced": true,
+  "surfaced_at_end": true,
+  "max_depth_m": 1.55,
+  "boundary_contacts": 0,
+  "collisions": 0,
+  "path_length_m": 20.1,
+  "final": {
+   "x": 13.91,
+   "y": -1.84,
+   "depth": 0.13
+  },
+  "localisation": {
+   "rmse_xy_m": 0.058,
+   "max_xy_m": 0.085,
+   "final_xy_m": 0.08,
+   "rmse_depth_m": 0.006,
+   "samples": 1699
+  },
+  "sim_time_s": 84.95
+ }
+}

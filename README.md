@@ -1,5 +1,7 @@
 # Agentic AUV: multi-agent autonomy for an underwater robot that keeps working when its sensors fail
 
+[![tests](https://github.com/MadLad10/Agentic-AUV/actions/workflows/tests.yml/badge.svg)](https://github.com/MadLad10/Agentic-AUV/actions/workflows/tests.yml)
+
 **v2 of [AUV_LLM_planner](https://github.com/MadLad10/AUV_LLM_planner).** v1 was a single LLM agent
 that turned plain-English missions into safe, validated plans for an autonomous underwater vehicle
 (AUV). v2 asks the next question: **what happens when the robot's sensors fail mid-mission?**
@@ -9,6 +11,10 @@ learned navigation, and a deterministic safety layer that can overrule every AI 
 | Camera goes black: the agents diagnose it, re-plan, and find the gate **by sonar alone** | DVL lost: navigation falls back to inertial dead reckoning + visual landmarks |
 |---|---|
 | ![blackout](docs/media/v2_blackout_sonar_gate.gif) | ![dvl dropout](docs/media/v2_dvl_dropout.gif) |
+
+| Murky water (2.5 m visibility): **camera–sonar fusion** finds and touches the red buoy, avoiding the gate and the green buoy | |
+|---|---|
+| ![turbidity](docs/media/v2_turbidity_sonar_cued.gif) | The camera only sees ~2 m. The sonar tracks every buoy through the murk; the perception agent visits unidentified sonar tracks one by one until the camera can read their colour, and the router keeps the vehicle clear of the gate posts and of buoys that are *not* the target. |
 
 *Each panel: third-person view · onboard camera with detections · forward-looking sonar · top-down
 map (white = true path, blue = what the robot believes) · live health status. Left: the full agent
@@ -21,19 +27,21 @@ simulator and referee all run live). Right: a scripted sequence of the same tool
 
 | Question | Result | Evidence |
 |---|---|---|
+| **Final v2 evaluation** (25 missions + 11 sensor faults, real local LLM qwen2.5 3B + VLM, frozen code) | **36/36 passed, 36/36 safe, 0 collisions**; faults detected 10/11. Two fault missions ended safely but **without the task done**: DVL loss (drifted 5.5 m and touched the *green* buoy) and compass disturbance (drifted while waiting for the LLM). Both are what the navigation fusion below targets | [final evaluation](eval/results/v2_final_qwen3b/summary.md) |
+| **v2.1 evaluation** (same 36 missions, fusion defaults on, frozen code) | **All 8 completable fault tasks now done** (DVL loss and compass disturbance fixed); 36/36 safe. But **34/36 passed**: in C3 the LLM's plans were all rejected by the validator (nothing moved, failed safe); in **R3 the robot reported "green buoy reached" although the referee shows nothing was touched** (the green buoy is invisible to the camera in that test): a false success under investigation | [v2.1 evaluation](eval/results/v2_final_fusion_qwen3b/summary.md) |
 | Does camera–sonar fusion matter? In murky water (2.5 m visibility), touch the red buoy | **5/5 missions with fusion vs 0/5 without** (70 s instead of timing out at 417 s), 0 wrong buoys touched. **But 4/5 of those runs scraped the gate post** (no obstacle avoidance yet); with the obstacle-aware routing added since: **5/5 done, 0 collisions** (spot check, 5 seeds; full rerun queued) | [perception study](eval/results/perception_study/summary.md), 5 seeds per arm |
 | Can it spot a sonar "ghost" (false target)? | **flagged 5/5** with fusion; **0/5 false alarms** on normal missions (the old heuristic raised 5/5) | same study |
 | Does the safety layer catch dangerous faults? | leak and frozen depth sensor: **vetoed and surfaced** within 3 s; v1 (no health layer) **kept driving through both** | [v1 vs v2 snapshot](eval/results/v2_qwen3b/summary.md), 72 runs, local LLM |
 | Overall, v1 single agent vs v2 multi-agent | **v2 35/36, v1 31/36** missions passed; both 36/36 safe; v2 detected 10 of 11 injected faults | same (dated snapshot, earlier perception code; each mission run once) |
+| Is a small local VLM a good detector? (moondream vs our YOLO, same 60 frames) | **No.** VLM recall: gate 0.55, red 0.67, green 1.0, yellow **0.22**; YOLO: 0.82 / 1.0 / 0.86 / 0.89. It called 50% of normal frames "dark" and gave empty answers to 18% of questions; median 2.2 s, p90 15 s per answer on CPU. So the VLM only adds scene descriptions for the planner; detection stays with YOLO + sonar | [VLM benchmark](eval/results/vlm_benchmark/summary.md) |
 | Detector trained only on simulator images | **YOLOv8n mAP@0.5 0.944**, mAP@0.5:0.95 0.818 on unseen layouts, 10 ms/image on CPU | [detector study](eval/results/detector_study/) |
-| Navigation without the DVL (20 seeds) | EKF alone: 0.77 ± 0.43 m error, **task done 10/20** (all 20 *reported* success). With the **learned velocity model** (GRU on IMU + thrust history): **0.19 ± 0.06 m, 20/20**. Without gate landmarks too: 1.32 m / 4/20 → **0.22 m / 20/20** | [nav study, 20 seeds](eval/results/nav_study_20seeds/summary.md) |
+| **Navigation fusion** (20 seeds per row): sonar wall map-matching + learned DVL-outage velocity + online current estimation, now the default | Task done **20/20 in every condition**. DVL lost: EKF 0.77 m / **11/20** → **0.13 m / 20/20**. Compass disturbed + DVL lost + 60 s LLM-style pauses (the failure seen in the final evaluation): EKF **35.9 m / 1/20** → **0.45 m / 20/20**. Even nominal: 0.16 → 0.09 m | [fusion study](eval/results/nav_study_fusion/summary.md) |
 | Never trust the robot's own success claim | in 10 of 20 DVL-loss runs (EKF alone) every tool reported success while the **independent referee showed the buoy was missed** | same |
 | Factor graph (GTSAM) vs EKF | **negative result:** worse in every condition, e.g. 1.83 m vs 0.17 m under a compass disturbance | same |
 
-> **Still running** (an experiment queue on the laptop; this README is updated when they finish):
-> real-VLM benchmark, the v2-only final evaluation (25 missions + 11 faults, real local LLM and
-> VLM), YOLO12n and turbidity-augmentation comparison, the sonar detector, the learned-velocity
-> model under an unseen water current, and the perception A/B rerun with obstacle-aware routing.
+> **Finished, write-up pending** (results are in `eval/results/`; this README is updated next): detector
+> architecture study (YOLOv8n / YOLO11n / YOLO12n, turbidity augmentation), sonar detector, routed
+> perception rerun (10 seeds), learned velocity under water currents. Also open: the R3 false success.
 
 ---
 
@@ -143,7 +151,10 @@ time, with GPU rendering on integrated graphics (camera at ~110 fps) in 140 MB o
 - **Vision-language model.** A local VLM (moondream, through our own Ollama container) describes
   the scene when a search fails. What we learned: this small model answers open questions
   ("the balls are green and red") but returns **empty answers to yes/no questions**, and it calls
-  our buoys "traffic lights". A benchmark against YOLO on the same frames is running.
+  our buoys "traffic lights". On the same 60 frames it is far weaker than our YOLO (see the headline
+  table), so it is used only to describe the scene to the planner, never as a detector. Running the
+  planner LLM and the VLM together overflowed the 4 GB memory cap of our Ollama container (the
+  runner was killed mid-evaluation); it now keeps one model in memory at a time.
 
 ## 5. Navigation: where am I without GPS?
 
@@ -155,7 +166,27 @@ time, with GPU rendering on integrated graphics (camera at ~110 fps) in 140 MB o
   cuts the error from 0.77 m to 0.19 m and turns 10/20 real successes into 20/20.
 - **Obstacle-aware routing.** Moves that would pass too close to a gate post get a detour
   waypoint; crossings under the crossbar that are too shallow are made deeper (the robot still
-  passes through the gate when that is the task).
+  passes through the gate when that is the task). Buoys known to the fusion tracker are keep-out
+  zones too, except the target: touching the wrong buoy fails a task.
+- **Water currents (physics-informed fix for the learned model).** The network was trained in still
+  water, so it predicts velocity *through the water*; the DVL measures velocity *over the ground*.
+  Their difference is the current, so while the DVL works the vehicle learns the current online and
+  adds it during an outage. In a 3-seed pilot with an unseen 0.1 m/s current, the plain learned model
+  got **worse than no model** (1.4 m vs 0.8 m error, 0/3 tasks), and with the current estimate it
+  recovered (0.56 m, 3/3); the estimate converges to within 5 cm/s of the true current (tested).
+  20-seed study queued.
+- **Acoustic landmarks (option, off by default).** Sonar range and bearing to the mapped gate posts
+  can correct the filter even when the camera is blind (tested). On our standard route it did not
+  help, because the drift happens after the gate, when the posts are behind the forward-looking
+  sonar; it remains available for routes that face the gate.
+- **Sonar map-matching against the pool walls** (new): every sonar beam that hits a wall is a range
+  to a known surface, so it corrects position *and heading* even with no DVL, a disturbed compass and
+  no landmark in view. On its own it is the strongest single fix under DVL loss (0.24 m, 19/20).
+- **How the pieces add up (20 seeds):** each one covers a different gap: walls bound position and
+  heading, the learned velocity carries the vehicle between wall updates, the current estimate
+  keeps the learned model honest in moving water. Only all three together reach 20/20 in every
+  condition. One honest caveat: in a water current, walls alone (0.16 m) beat the full stack (0.58 m),
+  because the current estimate has only 10 s of DVL data to converge before the dropout in that test.
 - **Factor graph (GTSAM ISAM2)** with IMU pre-integration and robust kernels, as a drop-in
   alternative. **Negative result:** in our tests it was *worse* than the EKF, badly so under a
   compass disturbance (a persistent 30° offset still leaks through the robust kernel, while the
@@ -189,6 +220,15 @@ time, with GPU rendering on integrated graphics (camera at ~110 fps) in 140 MB o
   real robot can't know. Found in an audit and removed; the vehicle now uses only its own estimate
   (from what its camera has recently proven it can see).
 - **Small VLMs need the right questions** (open "what" questions, not yes/no).
+- **A learned model can be worse than none outside its training conditions** (the unseen water
+  current); physics (estimating the current from the DVL) fixed it.
+- **Check what the metric counts.** Our first "wrong buoy" column ignored the green buoy even when
+  the task was red; a demo then showed a green-first touch that 5 seeds had missed. The metric was
+  corrected, the cause (search waypoints exempted an identified non-target buoy; the sonar-cued
+  search did not re-read new tracks) fixed, and the study rerun with 10 seeds.
+- **Results must come from one code version.** The installed packages are symlinks to the source,
+  so editing code mid-evaluation changed later missions; that run was discarded, the code frozen,
+  and the evaluation restarted with a recorded code fingerprint.
 - **Integration details bite:** ultralytics expects BGR images (RGB made every colour wrong);
   importing torch after creating GPU (EGL) contexts crashed the process; ROS 2 parameters are
   parsed as YAML.
@@ -201,6 +241,7 @@ source /opt/ros/humble/setup.bash && colcon build --symlink-install
 source scripts/env.sh
 python -m pytest -m "not integration and not llm and not ros"   # ~180 tests, ~1 min
 python -m pytest -m ros tests/integration/test_ros2_vehicle.py # ROS 2 integration test
+scripts/ci_local.sh                                             # the GitHub Actions job, locally (ros:humble)
 
 scripts/start_ollama.sh                                         # local LLM (+ VLM_MODEL=moondream)
 # one process
