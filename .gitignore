@@ -32,3 +32,12 @@ data/vis_test/vis_*/labels/
 data/synthetic_sonar/
 data/nav/
 data/vlm_bench/
+# generated data: keep only small, result-bearing artifacts
+data/**
+!data/models/
+!data/models/*_eval.json
+!data/models/yolo_eval.json
+!data/models/dvl_net.npz
+eval/results/*.log
+eval/results/*/run.log
+eval/results/*/DONE

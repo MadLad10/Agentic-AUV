@@ -100,13 +100,14 @@ def main():
     json.dump(rows, open(os.path.join(a.out, 'runs.json'), 'w'), indent=1)
     lines = ['# Perception A/B: camera-sonar fusion tracking OFF vs ON (v2 agent graph, replayed plans)', '',
              f'{a.seeds} seeds per arm; referee-scored. "task" = mission objective met per ground truth.', '',
-             '| Condition | Tracking | task | surfaced | wrong-buoy touches | false target flagged | inspections (mean) | sim s (mean) |',
-             '|---|---|---|---|---|---|---|---|']
+             '| Condition | Tracking | task | surfaced | runs with collisions | wrong-buoy touches | false target flagged | inspections (mean) | sim s (mean) |',
+             '|---|---|---|---|---|---|---|---|---|']
     for cond in conds:
         for tracking in (False, True):
             rs = [r for r in rows if r['condition'] == cond and r['tracking'] == tracking]
             lines.append(f'| {cond} | {"ON" if tracking else "off"} | {sum(r["task"] for r in rs)}/{len(rs)} | '
-                         f'{sum(r["surfaced"] for r in rs)}/{len(rs)} | {sum(len(r["wrong_touch"]) for r in rs)} | '
+                         f'{sum(r["surfaced"] for r in rs)}/{len(rs)} | {sum(r["collisions"] > 0 for r in rs)}/{len(rs)} | '
+                         f'{sum(len(r["wrong_touch"]) for r in rs)} | '
                          f'{sum(r["false_target_flagged"] for r in rs)}/{len(rs)} | '
                          f'{statistics.mean(r["inspections"] for r in rs):.1f} | {statistics.mean(r["sim_s"] for r in rs):.0f} |')
     open(os.path.join(a.out, 'summary.md'), 'w').write('\n'.join(lines) + '\n')
