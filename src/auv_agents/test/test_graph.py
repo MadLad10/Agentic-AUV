@@ -23,10 +23,11 @@ SURF = {'tool': 'surface', 'timeout_s': 90, 'success': {'type': 'surfaced'}, 'on
 PROMPT = 'pass through the gate, touch the red buoy, then surface'
 
 
-def setup(responses, faults=None, approval='auto', vlm=None, diag_llm=None, tracking_on=True, **ob):
+def setup(responses, faults=None, approval='auto', vlm=None, diag_llm=None, tracking_on=True, blind_classes=(), **ob):
     be = make_backend('default', faults=faults or [], seed=0,
                       onboard_overrides={'backend': {'max_rtf': None, 'idle_rtf': None, **ob},
-                                         'tracking': {'enabled': tracking_on}})
+                                         'tracking': {'enabled': tracking_on},
+                                         'perception': {'blind_classes': list(blind_classes)}})
     acfg = load_agents_config({'graph': {'approval': approval}, 'diagnostics': {'use_llm': diag_llm is not None}})
     rt = build_runtime(be, MockProvider(responses=responses), acfg, diag_llm, vlm, auto_approve=approval == 'auto')
     return be, rt
@@ -171,3 +172,26 @@ def test_diagnostics_llm_cannot_downgrade_a_veto():
                                    'degraded_mode': 'none', 'action': 'continue'}])
     d = DiagnosticsAgent(llm).diagnose(health, {}, {}, {})
     assert d['action'] == 'abort' and d['source'] == 'llm'
+
+
+def test_llm_plan_with_optional_objective_cannot_fake_success():
+    """Replays the exact R3 plan (objective step marked on_failure=continue) with the green buoy invisible."""
+    g = {'tool': 'navigate_to', 'params': {'target': 'green_buoy', 'standoff_m': 0}, 'on_failure': 'continue',
+         'success': {'type': 'detected', 'target': 'green_buoy'}, 'timeout_s': 120}
+    be, rt = setup([P([g, SURF])] * 4, blind_classes=['green_buoy'])
+    try:
+        res = run_mission(rt, 'touch the green buoy, then surface')
+        assert res['outcome'] in ('aborted', 'refused'), res['outcome']
+        assert be.sim.referee.report()['surfaced_at_end']
+    finally:
+        be.shutdown()
+
+
+def test_skipped_failed_step_makes_the_outcome_partial():
+    s = {'tool': 'search_pattern', 'params': {'target': 'green_buoy', 'pattern': 'yaw_sweep'}, 'on_failure': 'continue',
+         'timeout_s': 60, 'success': {'type': 'detected', 'target': 'green_buoy'}}
+    be, rt = setup([P([s, SURF])], blind_classes=['green_buoy'])
+    try:
+        assert run_mission(rt, 'look for the green buoy, then surface')['outcome'] == 'partial'
+    finally:
+        be.shutdown()

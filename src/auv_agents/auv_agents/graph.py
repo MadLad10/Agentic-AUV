@@ -376,7 +376,14 @@ def build_graph(rt: Runtime, checkpointer=None):
         phase = state.get('phase')
         outcome = {'step_ok': 'succeeded', 'refused': 'refused', 'rejected': 'rejected', 'error': 'error',
                    'operator_rejected': 'operator_rejected', 'aborted': 'aborted'}.get(phase, phase)
-        return {'outcome': outcome, 'events': [_ev('supervisor', f'mission finished: {outcome}')]}
+        # honest outcome: a step of the final plan that failed (and was skipped with on_failure=continue)
+        # means the mission did not fully succeed
+        skipped = [r for r in state.get('records', []) if not r['success']
+                   and r['plan_index'] == state.get('plan_index') and r['step'].get('on_failure') == 'continue']
+        if outcome == 'succeeded' and skipped:
+            outcome = 'partial'
+        msg = f'mission finished: {outcome}' + (f' ({len(skipped)} step(s) failed and were skipped)' if skipped else '')
+        return {'outcome': outcome, 'events': [_ev('supervisor', msg)]}
 
     # ------------------------------------------------------------------ routing
     def after_supervisor(state):

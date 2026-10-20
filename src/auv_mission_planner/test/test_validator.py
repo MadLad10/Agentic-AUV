@@ -225,3 +225,38 @@ def test_precheck(v, L):
     assert 'mission time' in v.precheck_step(nav, 80, L['max_mission_time_s'], p)
     p2 = plan([step(1, 'hold_depth', {'depth': 1}), SURF], aborts=[{'type': 'battery_below', 'percent': 15}])
     assert 'needed to start' in v.precheck_step(p2.steps[0], L['min_battery_to_start_pct'] - 1, 0, p2)
+
+
+def test_objective_step_cannot_be_optional():
+    """v2.1 eval R3: 'touch the green buoy' with on_failure=continue ended as 'succeeded', nothing touched."""
+    from auv_mission_planner.config import load_config
+    from auv_mission_planner.plan import MissionPlan
+    from auv_mission_planner.validator import SafetyValidator
+    v = SafetyValidator(load_config()['limits'])
+    plan = MissionPlan.model_validate({'abort_conditions': [{'type': 'battery_below', 'percent': 20}], 'steps': [
+        {'id': 1, 'tool': 'navigate_to', 'params': {'target': 'gate'}, 'on_failure': 'continue'},
+        {'id': 2, 'tool': 'navigate_to', 'params': {'target': 'green_buoy'}, 'on_failure': 'continue'},
+        {'id': 3, 'tool': 'surface', 'success': {'type': 'surfaced'}}]})
+    rep = v.validate(plan, prompt='touch the green buoy, then surface')
+    assert rep.ok
+    assert rep.plan.steps[1].on_failure == 'replan'                 # the objective
+    assert rep.plan.steps[0].on_failure == 'continue'               # gate not asked for: just a waypoint
+    assert any(f.rule == 'objective_not_optional' for f in rep.repaired)
+    rep = v.validate(plan, prompt='pass through the gate and touch the green buoy')
+    assert rep.plan.steps[0].on_failure == 'replan'                 # now the gate is part of the objective
+    rep = v.validate(plan, prompt='touch the green buoy if you can, then surface')
+    assert rep.plan.steps[1].on_failure == 'continue'               # the operator made it optional
+
+
+def test_mission_time_budget_keeps_minimums_when_uniform_scaling_would_not(v, L):
+    """v2.1 eval C3: gate + 3 x (search, touch) + surface. Minimums fit 900 s, uniform scaling did not."""
+    steps = [step(1, 'navigate_to', {'target': 'gate'}, timeout_s=120)]
+    for i, b in enumerate(['red_buoy', 'green_buoy', 'yellow_buoy']):
+        steps.append(step(2 + 2 * i, 'search_pattern', {'target': b}, timeout_s=200))
+        steps.append(step(3 + 2 * i, 'navigate_to', {'target': b}, timeout_s=120))
+    steps.append(SURF)
+    rep = v.validate(plan(steps))
+    assert rep.ok, rep.reasons()
+    assert sum(s.timeout_s for s in rep.plan.steps) <= L['max_mission_time_s']
+    assert all(s.timeout_s >= 180 for s in rep.plan.steps if s.tool == 'search_pattern')
+    assert all(s.timeout_s >= 60 for s in rep.plan.steps if s.tool == 'navigate_to')

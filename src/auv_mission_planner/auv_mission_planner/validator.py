@@ -40,6 +40,16 @@ def requested_depths(prompt: str) -> list[float]:
     return out
 
 
+OPTIONAL_PHRASES = ('if you can', 'if possible', 'optionally', 'optional', 'try to', 'if you see', 'if it is there',
+                    'if available', 'best effort')
+
+
+def _optional_wording(prompt: str) -> bool:
+    """The operator explicitly made part of the mission optional ("touch the red buoy if you can")."""
+    p = prompt.lower()
+    return any(w in p for w in OPTIONAL_PHRASES)
+
+
 def mentioned_objects(prompt: str, known: list[str]) -> set[str]:
     """Objects the operator's request refers to: by class name or by colour word; the gate always."""
     p = prompt.lower().replace('_', ' ')
@@ -241,6 +251,14 @@ class SafetyValidator:
                 if t in self.L['known_objects'] and t not in allowed:
                     self._reject(rep, 'off_mission_target', f'{t!r} is not something the operator asked for; '
                                  f'do not substitute a different object - refuse instead', s.id)
+            # the operator's objective may not be optional: a failed "touch the green buoy" step marked
+            # on_failure=continue let a mission end as "succeeded" with nothing touched (v2.1 eval, R3)
+            t = s.params.get('target')
+            objective = s.tool == 'navigate_to' and t in allowed and (t != 'gate' or 'gate' in prompt.lower())
+            if objective and s.on_failure == 'continue' and not _optional_wording(prompt):
+                if self._repair(rep, 'objective_not_optional',
+                                f'step {s.id} ({t}) is part of the mission objective; on_failure continue -> replan', s.id):
+                    s.on_failure = 'replan'
 
     def _fill_detected_targets(self, rep, plan: MissionPlan):
         """`detected` with an empty target: use the target the plan goes after next, else tool_ok."""
@@ -262,18 +280,23 @@ class SafetyValidator:
         return MIN_STEP_TIMEOUT_S.get(s.tool, 30.0)
 
     def _fit_time_budget(self, rep, plan: MissionPlan, total: float):
-        """Over budget: scale timeouts down proportionally if every step keeps a safe minimum."""
+        """Over budget: every step keeps its safe minimum timeout, and the rest of the budget is shared
+        in proportion to how much more each step asked for. Reject only if the minimums alone exceed
+        the budget. (Uniform scaling used to reject plans whose minimums fit, e.g. gate + three
+        searched buoys: 845 s of minimums in a 900 s budget.)"""
         budget = self.L['max_mission_time_s']
-        k = budget / total
-        if all(s.timeout_s * k >= self._min_timeout(s) for s in plan.steps):
-            if self._repair(rep, 'mission_time', f'step timeouts sum to {total:.0f}s > {budget:.0f}s; '
-                                                 f'scaled by {k:.2f} to fit the mission time budget'):
-                for s in plan.steps:
-                    s.timeout_s = float(int(s.timeout_s * k))
-                return
-        self._reject(rep, 'mission_time',
-                     f'sum of step timeouts {total:.0f}s > max mission time {budget:.0f}s '
-                     f'(too many steps to fit even with shorter timeouts)')
+        mins = [min(self._min_timeout(s), s.timeout_s) for s in plan.steps]
+        if sum(mins) > budget:
+            self._reject(rep, 'mission_time',
+                         f'sum of step timeouts {total:.0f}s > max mission time {budget:.0f}s, and even the '
+                         f'minimum safe timeouts need {sum(mins):.0f}s (too many steps)')
+            return
+        extra = [s.timeout_s - m for s, m in zip(plan.steps, mins)]
+        k = (budget - sum(mins)) / sum(extra) if sum(extra) > 0 else 0.0
+        if self._repair(rep, 'mission_time', f'step timeouts sum to {total:.0f}s > {budget:.0f}s; each step keeps '
+                                             f'its minimum and shares the remaining {budget - sum(mins):.0f}s'):
+            for s, m, e in zip(plan.steps, mins, extra):
+                s.timeout_s = float(int(m + e * k))
 
     def _check_abort_conditions(self, rep, plan: MissionPlan):
         L = self.L
