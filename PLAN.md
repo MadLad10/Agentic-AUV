@@ -157,7 +157,8 @@ auv_agentic_v2/
 | M9 | Eval: v1 vs v2 on 25 missions + fault tier | ✅ v1 vs v2 snapshot (72 runs: v2 35/36, v1 31/36); v2-only final run on the final stack queued (user decision: no new v1 runs) |
 | M10 | Optional dashboard; README with media, results, limitations | ✅ FastAPI + vanilla-JS dashboard with HITL approve/reject; README rewritten from verified data |
 | M11 | ROS 2 for real (added after review) | ✅ vehicle node with v1's action interfaces; v1 RosBackend + v2 agents drive it; integration test |
-| M12 | Research-driven upgrades (§7) + obstacle-aware routing + CI | ✅ S1–S3 done, S4 partly; gate-collision fix; GitHub Actions workflow (validated locally in ros:humble) |
+| M12 | Research-driven upgrades (§7) + obstacle-aware routing + CI | ✅ S1–S4 done (S4: YOLO11n/12n not better than v8n here; turbidity augmentation small gain); sonar wall map-matching + learned velocity + current estimation (20 seeds, default on); gate + buoy keep-out routing; CI validated in ros:humble |
+| M13 | Evaluation hardening | ✅ v2 (36/36 pass) → v2.1 fusion defaults (34/36; R3 false success, C3 over-strict time budget found) → fixes → v2.2 final (frozen code, fingerprinted) |
 
 ## 6. Open decisions for the user
 1. Simulator: MuJoCo chosen (above). Say so if you prefer Stonefish.
