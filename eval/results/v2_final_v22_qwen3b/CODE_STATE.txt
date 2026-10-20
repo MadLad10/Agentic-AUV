@@ -1,0 +1,6 @@
+base_commit: cdceff2
+uncommitted_src_diff_sha1: a0d552b343ab
+started: 2026-10-20T18:32:42+06:00
+note: v2.2 = v2.1 (fusion defaults) + objective-not-optional validator rule + honest 'partial' outcome + minimum-preserving time budget; code frozen; LLM qwen2.5:3b-instruct, VLM moondream (one model in memory); machine otherwise idle
+resumed: 2026-10-20T19:22:18+06:00 after the agent session ended mid-F10 (process and auv2-ollama container stopped); src fingerprint re-checked = a0d552b343ab
+resumed: 2026-10-20T19:32:19+06:00 after a machine reboot during F11; src fingerprint re-checked = a0d552b343ab
