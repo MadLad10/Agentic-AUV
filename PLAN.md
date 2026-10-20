@@ -161,3 +161,26 @@ auv_agentic_v2/
 1. Simulator: MuJoCo chosen (above). Say so if you prefer Stonefish.
 2. `GROQ_API_KEY` for the cloud LLM and Groq vision models.
 3. ~~Repo name~~ decided: `Agentic-AUV` (folder stays `auv_agentic_v2`).
+
+## 7. Research-driven upgrades (2026-10-20)
+
+Survey of recent work (sources below) → implemented on the simulation/perception/navigation side,
+each as an experiment against a measured baseline:
+
+| # | Upgrade | Literature | Baseline → result file |
+|---|---|---|---|
+| S1 | **Opti-acoustic perception**: FLS sonar images (speckle, beam pattern) auto-labelled from echo ground truth; sonar detector; **camera–sonar multi-object tracker** (per-sensor sequential KF updates, Mahalanobis-gated Hungarian, two-stage + DeepSORT matching cascade, class posterior from camera, evidence-based camera reach, false-target and gate-structure logic); **sonar-cued search** by the perception agent | RSFusionDet (2026), FLS YOLO/DeepSORT tracking (2025), OceanGym (2025: low visibility breaks MLLM agents) | `eval/results/perception_study/` |
+| S2 | **Learned DVL-outage velocity** (GRU over IMU + thrust-command history, numpy inference onboard) as pseudo-DVL in the filter | BeamsNet / Set-transformer DVL forecasting (2023–25) | `eval/results/nav_study_v2/` |
+| S3 | **Factor-graph navigation** (GTSAM ISAM2, IMU pre-integration, robust Huber factors) as a drop-in alternative to the EKF | FGO-ILNS, robust FGO for DVL outliers (2025) | `eval/results/nav_study_v2/` |
+| S4 | **Detector study**: YOLOv8n vs YOLO11n vs YOLO12n from scratch; physics-informed turbidity augmentation; recall-vs-visibility curve | YOLOv12 + physics-informed augmentation for underwater detection (arXiv 2506.23505) | `eval/results/detector_study/` |
+
+Not adopted (and why): OceanGym/HoloOcean-style UE5 simulators (Windows / NVIDIA only); open-vocabulary
+detectors (YOLOE/YOLO-World weights come from GitHub releases → would need approval; GPL/AGPL);
+UROSA-style runtime ROS 2 node generation (no code, no stated safety mechanism; conflicts with our
+"LLM never controls actuators" rule).
+
+Sources: UROSA arXiv 2507.23735 · OceanGym arXiv 2509.26536 / github.com/OceanGPT/OceanGym ·
+UnderwaterVLA arXiv 2509.22441 · RoboGuard arXiv 2503.07885 · KnowNo (CoRL 2023) · τ-bench arXiv 2406.12045 ·
+BTGenBot arXiv 2403.12761 / BTGenBot-2 arXiv 2602.01870 · RSFusionDet arXiv 2608.25367 ·
+YOLOv12 underwater arXiv 2506.23505 · Cross-correlation-aware deep INS/DVL fusion arXiv 2503.21727 ·
+FGO-ILNS arXiv 2310.14163.

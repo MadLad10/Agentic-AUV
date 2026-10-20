@@ -26,3 +26,9 @@ runs_yolo/
 data/models/*.log
 eval/results/*/eval.log
 eval/results/*/traces/
+data/synthetic_turbid/
+data/vis_test/vis_*/images/
+data/vis_test/vis_*/labels/
+data/synthetic_sonar/
+data/nav/
+data/vlm_bench/
