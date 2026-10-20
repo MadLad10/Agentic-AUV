@@ -34,9 +34,21 @@ guidance:                      # port of v1's vehicle_server behaviours
   degraded_speed_factor: 0.5   # speed scale in degraded navigation (e.g. DVL dropout)
 
 ekf:
+  estimator: ekf               # ekf | fgo (factor graph, GTSAM ISAM2, fgo.py)
+  fgo:
+    keyframe_dt: 0.25           # 4 Hz keyframes (measured: 0.5 s doubles the depth error)
+    imu_dt: 0.05               # IMU period: discrete sigmas below are converted to densities
+    accel_noise: 0.03          # m/s^2 (IMU spec, sim.yaml)
+    gyro_noise: 0.002          # rad/s
+    accel_bias_walk: 0.001
   initial_std: {pos: 0.1, vel: 0.05, yaw_deg: 2.0, gyro_bias: 0.002}
   process_noise: {accel: 0.08, gyro: 0.004, gyro_bias_walk: 0.0001}
   meas_noise: {dvl_vel: 0.02, depth: 0.01, compass_deg: 2.0}
+  learned_velocity:            # GRU pseudo-DVL during DVL outages (scripts/train_dvl_net.py)
+    enabled: false             # switched on after training + evaluation (nav study)
+    weights: null              # default data/models/dvl_net.npz
+    rate_hz: 2.0
+    std_inflation: 1.5         # x validation RMSE -> measurement noise
   landmarks:
     gate_prior: true           # the gate's pose comes from the course map (as teams get it)
     prior_std_m: 0.15          # error of that map position
@@ -67,3 +79,24 @@ health:
   camera_low_vis_dev: 6.5      # mean |pixel - water colour| below this ... (clear water >= 9.2 measured)
   camera_low_vis_frames: 3     # ... for this many consecutive 1 Hz frames -> low visibility (turbidity)
   veto_battery_pct: 12.0       # absolute floor: veto everything and surface
+
+tracking:                      # camera-sonar fusion tracker (tracking.py)
+  enabled: true
+  sonar_detection: contacts    # contacts (clustered returns) | yolo (detector on the FLS image)
+  process_noise_mps: 0.03      # static objects; absorbs navigation drift
+  high_conf: 0.5               # two-stage association threshold
+  confirm_hits: 3
+  min_separation_m: 0.6        # two buoys cannot be closer than ~their size: closer same-kind tracks merge
+  gate_exclusion_m: 1.6        # buoy-like tracks this close to a confirmed gate centre are gate structure
+  max_age_s: 120.0
+  false_target_unseen: 4       # confirmed sonar-only track, camera should see it, unseen this often
+  sonar_range_std_m: 0.08
+  sonar_bearing_std_deg: 1.0
+  camera_range_std_frac: 0.12  # 1.5x the detector's ~8% range noise: covariance inflation for monocular range tails
+  camera_bearing_std_deg: 2.0
+  camera_reliable_frac: 0.6    # camera "should see" a buoy inside this fraction of the visible range
+  camera_nominal_visibility_m: 9.0    # vehicle's own belief (not the sim's truth)
+  camera_degraded_visibility_m: 2.5   # belief once the health monitor reports turbidity
+  visibility_witness_s: 60.0   # camera reach = farthest buoy it actually detected within this window
+  sonar_max_width_m: 1.0       # wider sonar contacts (crossbar, wall residue) are not tracked as targets
+  gate_pair_tolerance_m: 0.4   # two contacts ~gate-width apart are labelled gate posts

@@ -27,6 +27,7 @@ from auv_onboard.control import Controller, wrap
 from auv_onboard.ekf import NavEKF
 from auv_onboard.health import HealthMonitor
 from auv_onboard.perception import GroundTruthCameraDetector, rel_to_world, sonar_contacts
+from auv_onboard.tracking import FusionTracker, Meas, polar_cov
 
 
 class Preempted(Exception):
@@ -53,9 +54,29 @@ class MarineSimBackend(VehicleBackend):
         v = sim.cfg['vehicle']
         self.ctrl = Controller(self.cfg['controller'], v['thrusters'], v['max_thrust_n'])
         tr = sim.truth()
-        self.ekf = NavEKF(self.cfg['ekf'], tuple(tr.pos), tr.yaw, sim.cfg['physics']['gravity'])
+        if self.cfg['ekf'].get('estimator', 'ekf') == 'fgo':       # factor graph (GTSAM ISAM2)
+            from auv_onboard.fgo import FactorGraphNav
+            self.ekf = FactorGraphNav(self.cfg['ekf'], tuple(tr.pos), tr.yaw, sim.cfg['physics']['gravity'])
+        else:
+            self.ekf = NavEKF(self.cfg['ekf'], tuple(tr.pos), tr.yaw, sim.cfg['physics']['gravity'])
         self.health = HealthMonitor(self.cfg['health'], sim.thruster_names)
+        self.learned_vel = None
+        self._next_learned = 0.0
+        lv = self.cfg['ekf'].get('learned_velocity', {})
+        if lv.get('enabled'):
+            from auv_onboard.learned_velocity import LearnedVelocity, default_path
+            path = lv.get('weights') or default_path()
+            if path:
+                self.learned_vel = LearnedVelocity(path, lv.get('std_inflation', 1.5))
         self.detector = self._make_detector()
+        tcfg = self.cfg.get('tracking', {})
+        self.tracker = FusionTracker(tcfg) if tcfg.get('enabled') else None
+        self.sonar_detector = None
+        if self.tracker is not None and tcfg.get('sonar_detection') == 'yolo':
+            from auv_onboard.sonar_detector import YoloSonarDetector
+            self.sonar_detector = YoloSonarDetector(sim)
+        from collections import deque
+        self._cam_ranges = deque(maxlen=400)        # (t, range) of recent camera buoy detections
         self.cam_offset = sim.cfg['sensors']['camera']['offset']
         self.sonar_offset = sim.cfg['sensors']['sonar']['offset']
         p = sim.arena['pool']
@@ -128,6 +149,15 @@ class MarineSimBackend(VehicleBackend):
         imu = self._fresh('imu')
         if imu:
             self.ekf.predict(imu)
+            if self.learned_vel is not None:
+                p = self.sim.readings.get('pressure')
+                self.learned_vel.push(imu, self.sim.cmd, p['depth'] if p else 0.0, self.sim.control_dt)
+                dvl = self.sim.readings.get('dvl') or {}
+                if not dvl.get('valid') and self.learned_vel.ready() and \
+                        self.sim.t + 1e-9 >= self._next_learned:
+                    # DVL has no bottom lock: learned pseudo-DVL bounds the IMU dead-reckoning drift
+                    self._next_learned = self.sim.t + 1.0 / self.cfg['ekf']['learned_velocity']['rate_hz']
+                    self.ekf.update_velocity_pseudo(self.learned_vel.predict(), self.learned_vel.std)
         for name, fn in (('dvl', self.ekf.update_dvl), ('pressure', self.ekf.update_pressure),
                          ('compass', self.ekf.update_compass)):
             r = self._fresh(name)
@@ -151,12 +181,96 @@ class MarineSimBackend(VehicleBackend):
                                          max(0.1, lm['camera_range_std_frac'] * horiz),
                                          math.radians(lm['camera_bearing_std_deg']))
         self._dets, self._det_t = dets, t
-        if dets:
-            self._notify(dets)
         scan = self.sim.readings.get('sonar')
-        if scan and scan['t'] > self._last_read_t.get('sonar_contacts', -1):
+        new_scan = bool(scan and scan['t'] > self._last_read_t.get('sonar_contacts', -1))
+        if new_scan:
             self._last_read_t['sonar_contacts'] = scan['t']
             self.contacts = sonar_contacts(scan, est, self.sim.arena['pool'], self.sonar_offset)
+        if self.tracker is None:
+            if dets:
+                self._notify(dets)
+            return
+        self._track(t, est, rel, new_scan)
+
+    # ---------------------------------------------------------------- camera-sonar fusion tracking
+    def _camera_view(self):
+        """Onboard belief of where the camera reliably sees a buoy now (None = camera unusable).
+        Uses the vehicle's OWN visibility estimate (nominal, or degraded once turbidity is detected),
+        never the simulator's ground truth."""
+        faults = self.health.last.types() if self.health_enabled else set()
+        if 'camera_blackout' in faults:
+            return None
+        tc = self.cfg['tracking']
+        vis = tc['camera_degraded_visibility_m'] if 'turbidity' in faults else tc['camera_nominal_visibility_m']
+        # evidence-based reach: only expect the camera to see as far as it has recently PROVEN it can
+        # (farthest buoy detection in the last window); no recent detection -> no expectation at all
+        t = self.sim.t
+        proven = [r for (tt, r) in self._cam_ranges if t - tt <= tc['visibility_witness_s']]
+        if not proven:
+            return None
+        reach = min(tc['camera_reliable_frac'] * vis, max(proven))
+        half = math.radians(self.sim.cfg['sensors']['camera']['hfov_deg'] / 2 - 5)
+        e = self.est()
+
+        def view(x, y):
+            dx, dy = x - e['x'], y - e['y']
+            r = math.hypot(dx, dy)
+            return 0.5 < r < reach and abs(wrap(math.atan2(dy, dx) - e['yaw'])) < half
+        return view
+
+    def _sonar_meas(self, est, t):
+        tc = self.cfg['tracking']
+        nav = self.ekf.pos_std() if self.nav_source == 'ekf' else 0.0
+        if self.sonar_detector is not None:          # learned FLS detector: classes come from the network
+            out = []
+            for cls, conf, c in self.sonar_detector.detect(est, self.sonar_offset):
+                R = polar_cov(c.range_m, est['yaw'] + c.bearing, tc['sonar_range_std_m'],
+                              math.radians(tc['sonar_bearing_std_deg']), nav)
+                out.append(Meas(c.x, c.y, R, 'sonar', cls, conf, None, t))
+            return out
+        gate_w = next((o.get('width', 2.0) for o in self.sim.arena['objects'] if o['class'] == 'gate'), 2.0)
+        cs = [c for c in self.contacts if c.range_m * max(c.width_rad, 1e-3) < tc['sonar_max_width_m']]
+        out = []
+        for c in cs:
+            post = any(o is not c and abs(math.hypot(o.x - c.x, o.y - c.y) - gate_w) < tc['gate_pair_tolerance_m']
+                       for o in cs)
+            R = polar_cov(c.range_m, est['yaw'] + c.bearing, tc['sonar_range_std_m'],
+                          math.radians(tc['sonar_bearing_std_deg']), nav)
+            out.append(Meas(c.x, c.y, R, 'sonar', 'gate_post' if post else 'buoy', 0.6, None, t))
+        return out
+
+    def _track(self, t, est, rel, new_scan):
+        tc = self.cfg['tracking']
+        nav = self.ekf.pos_std() if self.nav_source == 'ekf' else 0.0
+        meas = []
+        for d in rel:
+            x, y, depth = rel_to_world(d, est, self.cam_offset)
+            horiz = d.range_m * math.cos(d.elevation)
+            # visibility evidence: a buoy seen at r proves reach r; the big gate is visible further, so a
+            # gate seen at r proves buoy reach of r * (buoy / gate visibility factor)
+            pc = self.cfg['perception']
+            k = pc['visibility_factor'] / pc['gate_visibility_factor'] if d.cls == 'gate' else 1.0
+            self._cam_ranges.append((t, horiz * k))
+            R = polar_cov(horiz, est['yaw'] + d.bearing, tc['camera_range_std_frac'] * horiz,
+                          math.radians(tc['camera_bearing_std_deg']), nav)
+            meas.append(Meas(x, y, R, 'camera', d.cls, d.confidence, depth, t))
+        if new_scan:
+            meas += self._sonar_meas(est, t)
+        self.tracker.update(t, meas, self._camera_view())
+        # the shared world model (object targets for the tools) gets FUSED, classified tracks
+        fused = []
+        for tr in self.tracker.confirmed():
+            if tr.cls is None or tr.depth is None:
+                continue
+            dx, dy = tr.x[0] - est['x'], tr.x[1] - est['y']
+            fused.append(Det(tr.cls, tr.confidence, float(tr.x[0]), float(tr.x[1]), float(tr.depth),
+                             math.hypot(dx, dy), math.degrees(wrap(math.atan2(dy, dx) - est['yaw'])), t))
+        if fused:
+            self._notify(fused)
+        sus = self.tracker.false_target_suspects()
+        self.health.sonar_flags = {'false_target': bool(sus),
+                                   'detail': (f'sonar track at ({sus[0].x[0]:.1f}, {sus[0].x[1]:.1f}) seen '
+                                              f'{sus[0].sonar_hits}x by sonar, never by the camera') if sus else ''}
 
     def _health_tick(self):
         if self.sim.t % 1.0 < self.sim.control_dt / 2 + 1e-9:         # 1 Hz camera health frame
@@ -188,8 +302,14 @@ class MarineSimBackend(VehicleBackend):
         tr = sim.truth()
         if self.nav_source == 'ekf':
             sim.referee.record_estimate(sim.t, self.ekf.s[:3], tr.pos)
-        for h in self.tick_hooks:
-            h(self)
+        for h in list(self.tick_hooks):
+            try:
+                h(self)
+            except Exception as e:           # a telemetry/logging hook must never stop the vehicle loop
+                import traceback
+                traceback.print_exc()
+                self.events.append({'t': sim.t, 'event': 'tick_hook_error', 'error': f'{type(e).__name__}: {e}'})
+                self.tick_hooks.remove(h)
 
     def _throttle(self, rtf):
         if not rtf:

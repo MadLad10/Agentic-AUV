@@ -104,6 +104,8 @@ class MarineSim:
         self.energy_wh = b['capacity_wh'] * b['initial_percent'] / 100.0
         self._render_pool = None           # EGL contexts are thread-bound: all rendering on one thread
         self._geom_class = self._geom_classes()
+        self._geom_obj = self._geom_objects()
+        self._sonar_imager = None
         self._sonar_dirs = self._make_sonar_dirs()
         self._sonar_targets = self._make_sonar_targets()
         self._dvl_dirs = self._make_dvl_dirs()
@@ -112,6 +114,22 @@ class MarineSim:
         self._sample_sensors(force=True)
 
     # ------------------------------------------------------------------ setup helpers
+    def _geom_objects(self):
+        """geom id -> object id (arena id; 'structure' for the pool), tethers excluded."""
+        ids = {o['id'] for o in self.arena['objects']}
+        out = {}
+        for g in range(self.model.ngeom):
+            name = self.model.geom(g).name or ''
+            obj = name.split('__')[0]
+            if name.endswith('__tether'):
+                continue
+            part = {'post_left': '#L', 'post_right': '#R', 'bar': '#bar'}.get(name.split('__')[-1], '')
+            if obj in ids:
+                out[g] = obj + part            # gate posts are separate sonar targets
+            elif name.startswith(('pool_', 'wall_')):
+                out[g] = 'structure'
+        return out
+
     def _geom_classes(self):
         """geom id -> object class (gate / red_buoy / ...) or 'structure' / None."""
         by_id = {o['id']: o['class'] for o in self.arena['objects']}
@@ -136,20 +154,20 @@ class MarineSim:
         return az, dirs.reshape(-1, 3)
 
     def _make_sonar_targets(self):
-        """Thin course objects as vertical segments (top, bottom) in world coordinates."""
+        """Thin course objects as vertical segments (object id, top, bottom) in world coordinates."""
         out = []
         for o in self.arena['objects']:
             c = np.array([o['x'], o['y'], o['z']], float)
             if o['class'] == 'gate':
                 w, h, yaw = o['width'], o['height'], o.get('yaw', 0.0)
                 pts = []
-                for side in (1, -1):
+                for side, tag in ((1, 'L'), (-1, 'R')):
                     off = np.array([-math.sin(yaw), math.cos(yaw), 0.0]) * side * w / 2
-                    pts.append((c + off + [0, 0, h / 2], c + off - [0, 0, h / 2]))
+                    pts.append((f'{o["id"]}#{tag}', c + off + [0, 0, h / 2], c + off - [0, 0, h / 2]))
                 out.append(('gate', pts))
             else:
                 r = o.get('radius', 0.2)
-                out.append((o['class'], [(c + [0, 0, r], c - [0, 0, r])]))
+                out.append((o['class'], [(o['id'], c + [0, 0, r], c - [0, 0, r])]))
         return out
 
     def _make_dvl_dirs(self):
@@ -354,8 +372,14 @@ class MarineSim:
         ranges = np.full(nb, -1.0)
         inten = np.zeros(nb)
         truth = [None] * nb
+        echoes = []                      # (beam, range, strength, class, object id): for sonar images
         for i in range(nb):
             hits = [(d, g) for d, g in zip(dist[i], gid[i]) if g >= 0 and 0 < d <= c['max_range_m']]
+            for d, g in hits:
+                cl = self._geom_class.get(int(g))
+                ts = 0.45 if cl in (None, 'structure') else 1.0            # target strength
+                echoes.append((i, d + self.rng.normal(0, c['range_noise_m']), ts / (1 + 0.05 * d), cl,
+                               self._geom_obj.get(int(g))))
             if not hits or self.rng.random() < c['p_miss']:
                 continue
             d, g = min(hits)
@@ -369,7 +393,7 @@ class MarineSim:
         bw = abs(az[1] - az[0]) if nb > 1 else 0.02
         el_lim = math.radians(max(abs(e) for e in c['elevations_deg'])) + math.radians(5)
         for cls, pts in self._sonar_targets:
-            for top, bot in pts:
+            for oid, top, bot in pts:
                 rel_t, rel_b = R.T @ (top - origin), R.T @ (bot - origin)
                 mid = (rel_t + rel_b) / 2
                 rng_ = float(np.linalg.norm(mid))
@@ -386,6 +410,7 @@ class MarineSim:
                 ranges[i] = rng_ + self.rng.normal(0, c['range_noise_m'])
                 inten[i] = 1.0 / (1 + 0.05 * rng_) + abs(self.rng.normal(0, 0.05))
                 truth[i] = cls
+                echoes.append((i, ranges[i], 1.0 / (1 + 0.05 * rng_), cls, oid))
         for f in self.faults.all('sonar_false_target', self.t):
             p = np.array([f.params.get('x', 0.0), f.params.get('y', 0.0), f.params.get('z', -1.5)])
             rel = R.T @ (p - origin)
@@ -399,8 +424,20 @@ class MarineSim:
                         ranges[j] = rng_ + self.rng.normal(0, c['range_noise_m'])
                         inten[j] = 0.9
                         truth[j] = 'false_target'
+                        echoes.append((j, ranges[j], 0.9 / (1 + 0.05 * rng_), 'false_target', None))
         return {'t': self.t, 'valid': True, 'bearings': az.tolist(), 'ranges': ranges.round(3).tolist(),
-                'intensity': inten.round(3).tolist(), '_truth': truth}
+                'intensity': inten.round(3).tolist(), '_truth': truth, '_echoes': echoes}
+
+    def sonar_image(self, scan: dict | None = None):
+        """FLS fan image (uint8 HxW) of the latest ping + ground-truth boxes (see sonar_image.py).
+        Returns (None, []) when the sonar has no valid ping (dropout)."""
+        from .sonar_image import SonarImager
+        scan = scan or self.readings.get('sonar')
+        if not scan or not scan.get('valid'):
+            return None, []
+        if self._sonar_imager is None:
+            self._sonar_imager = SonarImager(self.cfg, np.asarray(scan['bearings']))
+        return self._sonar_imager.render(scan.get('_echoes', []), self.rng)
 
     # ------------------------------------------------------------------ camera
     def _get_renderer(self, kind='rgb'):

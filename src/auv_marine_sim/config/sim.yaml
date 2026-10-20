@@ -46,6 +46,13 @@ sensors:
     range_noise_m: 0.05
     p_miss: 0.05             # per-beam missed return
     offset: [0.2, 0.0, -0.08]
+    image:                   # FLS fan image (sonar_image.py)
+      range_bins: 256
+      height: 256
+      width: 448
+      speckle: 1.0           # multiplicative Rayleigh speckle (mean 1)
+      noise_floor: 0.03      # additive Rayleigh noise
+      gain: 1.6
   dvl:
     rate_hz: 5.0
     beam_angle_deg: 30.0

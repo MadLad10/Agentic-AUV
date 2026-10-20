@@ -95,7 +95,7 @@ def labels_for(sim: MarineSim, seg: np.ndarray, cam_pos: np.ndarray, vis: float,
 
 
 def generate(out_dir: str, scenes: int, frames: int, seed: int = 0, val_frac: float = 0.2,
-             base_arena: str = 'default') -> dict:
+             base_arena: str = 'default', vis_range=(4.0, 12.0), fixed_vis: float | None = None) -> dict:
     import mujoco
     from PIL import Image
     rng = np.random.default_rng(seed)
@@ -106,7 +106,7 @@ def generate(out_dir: str, scenes: int, frames: int, seed: int = 0, val_frac: fl
     stats = {'images': 0, 'boxes': {c: 0 for c in CLASSES}, 'empty': 0, 'splits': {'train': 0, 'val': 0}}
     for sc in range(scenes):
         arena = random_arena(base, rng)
-        vis = float(rng.uniform(4.0, 12.0))
+        vis = fixed_vis if fixed_vis is not None else float(rng.uniform(*vis_range))
         water = (np.array([0.05, 0.22, 0.30]) * rng.uniform(0.7, 1.3, 3)).clip(0, 1).tolist()
         sim = MarineSim(arena, seed=int(rng.integers(1 << 30)),
                         overrides={'sensors': {'camera': {'visibility_m': vis, 'water_rgb': water,
@@ -147,8 +147,65 @@ def main():
     ap.add_argument('--scenes', type=int, default=40)
     ap.add_argument('--frames', type=int, default=50)
     ap.add_argument('--seed', type=int, default=0)
+    ap.add_argument('--vis-min', type=float, default=4.0)
+    ap.add_argument('--vis-max', type=float, default=12.0)
+    ap.add_argument('--fixed-vis', type=float, default=None, help='every scene at this visibility (test sets)')
+    ap.add_argument('--val-frac', type=float, default=0.2)
+    ap.add_argument('--sonar', action='store_true', help='forward-looking sonar images instead of camera')
     a = ap.parse_args()
-    print(json.dumps(generate(a.out, a.scenes, a.frames, a.seed), indent=1))
+    if a.sonar:
+        print(json.dumps(generate_sonar(a.out, a.scenes, a.frames, a.seed, a.val_frac), indent=1))
+        return
+    print(json.dumps(generate(a.out, a.scenes, a.frames, a.seed, a.val_frac, vis_range=(a.vis_min, a.vis_max),
+                              fixed_vis=a.fixed_vis), indent=1))
+
+
+
+# ============================================================== sonar (forward-looking imaging sonar)
+def generate_sonar(out_dir: str, scenes: int, frames: int, seed: int = 0, val_frac: float = 0.2,
+                   base_arena: str = 'default') -> dict:
+    """FLS fan images auto-labelled from the echo ground truth (classes: buoy, gate_post).
+    Domain randomisation: object layout, vehicle pose, speckle strength, noise floor and gain."""
+    import mujoco
+    from PIL import Image
+    from .sonar_image import SONAR_CLASSES
+    rng = np.random.default_rng(seed)
+    base = load_arena(base_arena)
+    for split in ('train', 'val'):
+        os.makedirs(os.path.join(out_dir, 'images', split), exist_ok=True)
+        os.makedirs(os.path.join(out_dir, 'labels', split), exist_ok=True)
+    stats = {'images': 0, 'boxes': {c: 0 for c in SONAR_CLASSES}, 'empty': 0}
+    for sc in range(scenes):
+        arena = random_arena(base, rng)
+        im = {'speckle': float(rng.uniform(0.7, 1.3)), 'noise_floor': float(rng.uniform(0.015, 0.06)),
+              'gain': float(rng.uniform(1.2, 2.2))}
+        sim = MarineSim(arena, seed=int(rng.integers(1 << 30)), overrides={'sensors': {'sonar': {'image': im}}})
+        split = 'val' if sc >= scenes * (1 - val_frac) else 'train'
+        for fr in range(frames):
+            x, y, z, yaw = sample_pose(arena, rng)
+            sim.data.qpos[:3] = [x, y, z]
+            sim.data.qpos[3:7] = [math.cos(yaw / 2), 0, 0, math.sin(yaw / 2)]
+            mujoco.mj_forward(sim.model, sim.data)
+            scan = sim._sonar(sim.truth())
+            img, boxes = sim.sonar_image(scan)
+            H, W = img.shape
+            name = f's{sc:03d}_f{fr:03d}'
+            Image.fromarray(img).save(os.path.join(out_dir, 'images', split, name + '.png'))
+            with open(os.path.join(out_dir, 'labels', split, name + '.txt'), 'w') as f:
+                for b in boxes:
+                    x0, y0, x1, y1 = b['box']
+                    f.write(f'{SONAR_CLASSES.index(b["class"])} {(x0 + x1) / 2 / W:.6f} {(y0 + y1) / 2 / H:.6f} '
+                            f'{(x1 - x0) / W:.6f} {(y1 - y0) / H:.6f}\n')
+                    stats['boxes'][b['class']] += 1
+            stats['images'] += 1
+            stats['empty'] += not boxes
+        sim.close()
+    with open(os.path.join(out_dir, 'data.yaml'), 'w') as f:
+        f.write(f'path: {os.path.abspath(out_dir)}\ntrain: images/train\nval: images/val\n'
+                f'names:\n' + ''.join(f'  {i}: {c}\n' for i, c in enumerate(SONAR_CLASSES)))
+    with open(os.path.join(out_dir, 'stats.json'), 'w') as f:
+        json.dump(stats, f, indent=1)
+    return stats
 
 
 if __name__ == '__main__':

@@ -139,6 +139,18 @@ class NavEKF:
         y = np.asarray(dvl['vel'], float) - h
         return self._update('dvl', y, H, np.eye(3) * r['dvl_vel'] ** 2, CHI2_3 * 4)
 
+    def update_velocity_pseudo(self, vel_body, std) -> bool:
+        """Pseudo-DVL: body-frame velocity from the learned estimator, with its own (larger) noise."""
+        R = rot(self.roll, self.pitch, self.s[IYAW])
+        v = self.s[IVX:IVZ + 1]
+        H = np.zeros((3, 8))
+        H[:, IVX:IVZ + 1] = R.T
+        H[:, IYAW] = drot_dyaw(self.roll, self.pitch, self.s[IYAW]).T @ v
+        y = np.asarray(vel_body, float) - R.T @ v
+        if 'learned_vel' not in self.stats:
+            self.stats['learned_vel'] = UpdateStat()
+        return self._update('learned_vel', y, H, np.diag(np.asarray(std, float) ** 2), CHI2_3 * 4)
+
     def update_pressure(self, p: dict) -> bool:
         r = self.cfg['meas_noise']
         H = np.zeros((1, 8))

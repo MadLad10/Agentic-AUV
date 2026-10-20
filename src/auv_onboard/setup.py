@@ -21,5 +21,5 @@ setup(
     description='Deterministic onboard software: EKF navigation, guidance and control, perception fusion, health monitoring, and the VehicleBackend for the MuJoCo sim.',
     license='MIT',
     tests_require=['pytest'],
-    entry_points={'console_scripts': []},
+    entry_points={'console_scripts': ['vehicle_node = auv_onboard.ros_node:main']},
 )

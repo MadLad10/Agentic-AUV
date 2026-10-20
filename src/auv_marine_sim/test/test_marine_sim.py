@@ -191,3 +191,24 @@ def test_referee_gate_buoy_surface_collision():
     assert r['collisions'] == 1
     ref.record_estimate(t, (14.3, -2.0, -0.05), (14.0, -2.0, -0.05))
     assert ref.localisation()['rmse_xy_m'] == pytest.approx(0.3, abs=1e-6)
+
+
+def test_sonar_image_and_autolabels():
+    s = MarineSim('default', seed=0)
+    try:
+        place(s, 3.0, 0.0, -1.5)
+        scan = s._sonar(s.truth())
+        img, boxes = s.sonar_image(scan)
+        assert img.shape == (256, 448) and img.dtype == np.uint8
+        objs = {b['obj'] for b in boxes}
+        assert {'gate#L', 'gate#R', 'red_buoy', 'green_buoy'} <= objs
+        assert all(b['class'] in ('buoy', 'gate_post') for b in boxes)
+        # a labelled echo is brighter than the speckle background around it
+        b = next(b for b in boxes if b['obj'] == 'red_buoy')
+        x0, y0, x1, y1 = (int(round(v)) for v in b['box'])
+        assert img[y0:y1 + 1, x0:x1 + 1].max() > np.percentile(img, 95)
+    finally:
+        s.close()
+    s = run_fault('sonar_dropout')
+    assert s.sonar_image() == (None, [])
+    s.close()
