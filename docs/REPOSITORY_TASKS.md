@@ -2,7 +2,7 @@
 
 Prepared: 2026-10-27.
 
-This is the target division of the existing work into four engineering repositories and the existing private research repository. It assigns each implementation a maintained home and records the work needed to reach that structure. The table does not mean that the navigation and perception repositories have already been extracted.
+This is the target division of the existing work into four engineering repositories and the existing private research repository. It assigns each implementation a maintained home and records the work needed to reach that structure. Status distinguishes prepared standalone packages from pending application migrations and the planned perception extraction.
 
 ## Task boundaries
 
@@ -10,7 +10,7 @@ This is the target division of the existing work into four engineering repositor
 |---|---|---|---|---|
 | Existing Agentic AUV repository | How does the robot turn a mission into supervised, validated execution? | Mission agents, planning/replanning, tool schemas and validation, execution, health intervention, guidance/control, ROS adapters, dashboard and telemetry | Executed mission, operator interface, mission trace and end-to-end evaluation | Integrated application exists; currently contains the component implementations listed below |
 | `mujoco-marine-sim` | What happens to the vehicle and what do its sensors measure? | Vehicle/world dynamics, sensor models, scheduled faults, rendering, ground-truth annotations and referee | Timestamped simulated observations, explicit truth, annotations and fault/event logs | Standalone package prepared at `../mujoco_marine_sim`; application dependency migration is still needed |
-| `auv-navigation-fusion` | Where is the vehicle, how is it moving, and how uncertain is that estimate? | EKF, GTSAM factor graph, navigation measurement updates, sonar map matching, learned velocity recovery and water-current estimation | Estimated pose/velocity, covariance and estimator diagnostics | Candidate implementation is inside `auv_onboard`; extraction and independent validation remain |
+| `auv-navigation-fusion` | Where is the vehicle, how is it moving, and how uncertain is that estimate? | EKF, GTSAM factor graph, navigation measurement updates, sonar map matching, learned velocity recovery and water-current estimation | Estimated pose/velocity, covariance and estimator diagnostics | Standalone package prepared at `../auv_navigation_fusion`; 30 tests passed in both clean source-install and wheel-install environments; application migration remains |
 | `camera-sonar-perception` | What objects are visible and where are they relative to the vehicle or a supplied pose? | Camera/sonar detection, association, multi-object tracking, detector training and perception evaluation | Detections, fused tracks, identities, confidence and uncertainty | Candidate implementation is inside `auv_onboard` and study scripts; extraction and independent validation remain |
 | Existing private `auv_cvpr` repository | Does a proposed research method answer the paper's question under controlled comparisons? | Literature, hypotheses, experimental methods, frozen protocols, public-data adapters, ablations, diagnostics and paper artifacts | Reproducible experiments, evidence tables, figures and manuscript material | Existing research workspace; this division does not move or publish its contents |
 
@@ -34,7 +34,9 @@ The simulator has already been copied into a standalone package. The original ap
 
 ### State estimation
 
-Candidate files for `auv-navigation-fusion`:
+The standalone package is prepared at `/home/yaad/yaad_ws/auv_navigation_fusion`, with a measurement-driven API, log-replay CLI, packaged model/configuration, tests and an 18-run analytic replay comparison. Its README documents the sensor/technology stack, fresh results and imported historical studies separately. Learned recovery and wall corrections are supported through EKF; unsupported FGO combinations fail explicitly. The original application sources remain in place, and adopting the package here is a separate integration task.
+
+Original source files used for `auv-navigation-fusion`:
 
 - `src/auv_onboard/auv_onboard/ekf.py`.
 - `src/auv_onboard/auv_onboard/fgo.py`.
@@ -143,7 +145,7 @@ Model files have an owner too: learned velocity artifacts belong to navigation, 
 ## Execution order
 
 1. Finish the simulator/application dependency migration. Validate installed-package import resolution, arena/config loading and existing mission/fault behavior before retiring the application's duplicate simulator sources.
-2. Extract state estimation with a measurement-driven API and its own configuration. Move navigation-specific backend algorithms behind that API; keep a thin application adapter. Validate isolated installation, measurement replay and simulator integration.
+2. The standalone state-estimation extraction is prepared and independently validated. Adopt its measurement-driven API in the application through a thin adapter, then validate that integration before retiring duplicate navigation sources.
 3. Extract perception with image/scan inputs, explicit calibration and an optional supplied pose. Keep simulation truth adapters separate, port its training/evaluation recipes, and verify detector/tracker behavior independently and through the application.
 4. Update the application to install identified component versions. Run integration checks and retain end-to-end demonstrations and mission reports there.
 5. Record dependency versions in research experiment manifests as the engineering packages become available. Preserve original result provenance when changing dependencies.

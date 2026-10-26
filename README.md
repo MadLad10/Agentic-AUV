@@ -12,8 +12,9 @@ Every result is scored by an independent ground-truth referee, never by the robo
 **This repository's task is mission autonomy:** turn an operator's request into a plan, validate it,
 supervise execution, diagnose faults and complete or safely abort the mission. It owns the mission
 agents, tool validation, deterministic guidance/control, ROS integration, dashboard and telemetry.
-The existing navigation and perception implementations remain integrated here while their
-standalone extraction is planned in the [repository task map](docs/REPOSITORY_TASKS.md).
+The existing navigation and perception implementations remain integrated here. A standalone
+navigation package is prepared; adopting it here and extracting perception are tracked in the
+[repository task map](docs/REPOSITORY_TASKS.md).
 
 The physics, environment, sensor and fault models are also available as the standalone
 [MuJoCo Marine Sim](https://github.com/MadLad10/mujoco-marine-sim) package. Its application
