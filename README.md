@@ -1,6 +1,6 @@
-# Agentic AUV: Fault-Tolerant Multi-Agent AI for an Autonomous Underwater Vehicle
+# Agentic AUV: Multi-Agent Mission Planning and Safe Execution for an Underwater Robot
 
-[![tests](https://github.com/MadLad10/Agentic-AUV/actions/workflows/tests.yml/badge.svg)](https://github.com/MadLad10/Agentic-AUV/actions/workflows/tests.yml)
+[![tests](https://github.com/MadLad10/Agentic-AUV-multimodal-multi-agent-autonomy-for-an-underwater-robot/actions/workflows/tests.yml/badge.svg)](https://github.com/MadLad10/Agentic-AUV-multimodal-multi-agent-autonomy-for-an-underwater-robot/actions/workflows/tests.yml)
 
 **An autonomous underwater robot that takes missions in plain English and keeps working when its
 sensors fail.** A team of AI agents built with LangGraph plans and supervises each mission. A
@@ -8,6 +8,19 @@ deterministic safety layer can overrule every AI. Multi-sensor fusion (camera, s
 Doppler, pressure, compass) keeps the robot localised and able to find objects when individual
 sensors go blind. Everything runs in a custom MuJoCo physics simulation with injected sensor faults.
 Every result is scored by an independent ground-truth referee, never by the robot's own claims.
+
+**This repository's task is mission autonomy:** turn an operator's request into a plan, validate it,
+supervise execution, diagnose faults and complete or safely abort the mission. It owns the mission
+agents, tool validation, deterministic guidance/control, ROS integration, dashboard and telemetry.
+The existing navigation and perception implementations remain integrated here while their
+standalone extraction is planned in the [repository task map](docs/REPOSITORY_TASKS.md).
+
+The physics, environment, sensor and fault models are also available as the standalone
+[MuJoCo Marine Sim](https://github.com/MadLad10/mujoco-marine-sim) package. Its application
+compatibility run passed **54 checks**, including mission execution, fault handling, a rendered-image
+YOLO check and a ROS 2 action test. The normal application installation still uses its internal
+simulator copy; switching that dependency is the next migration step.
+[Results and reproduction instructions](eval/results/standalone_sim_step2_20261027/README.md).
 
 | Murky water (2.5 m visibility): camera–sonar fusion finds the red buoy and avoids the gate and the wrong buoy | Camera fails completely: the agents diagnose it, re-plan, and find the gate by sonar alone |
 |---|---|
@@ -400,6 +413,24 @@ python -m auv_agents.dashboard --provider ollama                 # http://127.0.
 python -m auv_agents.mcp_server                                  # tools for MCP clients
 scripts/run_queue.sh                                             # all studies and evaluations (resumable)
 ```
+
+### Standalone simulator compatibility
+
+The standalone simulator was installed into an isolated target directory and tested against this
+application's existing dependency versions. Import and resource checks verified that the tests used
+the installed simulator and its packaged configuration. The final suites passed with no failures,
+errors or skips:
+
+| Suite | Passed | Checks |
+|---|---|---|
+| Core | 52 | Physics, sensors, all fault types, estimation, tracking, mission execution, approvals and safe aborts |
+| Vision | 1 | YOLO gate detection on a rendered image, including range and bearing checks |
+| ROS 2 | 1 | Navigation and surfacing through the vehicle action interface, scored by the referee |
+
+[Full report, provenance and reproduction commands](eval/results/standalone_sim_step2_20261027/README.md).
+The mission-agent checks use scripted plans; the rendered-image detector is checked separately.
+These results verify compatibility before changing the normal installation or removing the
+duplicate simulator sources.
 
 ## 13. Limitations
 
