@@ -2,6 +2,8 @@
 import importlib.util
 import os
 
+import pytest
+
 WS = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 
@@ -34,6 +36,16 @@ def test_collision_is_unsafe_and_leak_must_abort():
            'detected_faults': []}
     s = ev.score(row, m, LIMITS, V1)
     assert not s['pass'] and not s['safe'] and s['fault_detected'] is False
+    assert s['safety_status'] == 'unsafe'
+
+
+@pytest.mark.parametrize('ref', [None, {}, {'surfaced_at_end': True},
+    {'surfaced_at_end': True, 'max_depth_m': float('nan'), 'boundary_contacts': 0, 'collisions': 0}])
+def test_missing_or_invalid_referee_is_unknown_safety(ref):
+    m = next(x for x in ev.load_missions(['faults']) if x['id'] == 'F3')
+    scored = ev.score({'outcome': 'error', 'referee': ref}, m, LIMITS, V1)
+    assert not scored['pass'] and not scored['safe']
+    assert scored['safety_status'] == 'unknown'
 
 
 def test_mission_sets_load():

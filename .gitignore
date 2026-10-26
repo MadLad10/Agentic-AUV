@@ -44,3 +44,5 @@ eval/results/*/DONE
 
 # local system monitor (scripts/sysmon.py)
 logs/
+# Full simulation recordings are retained locally; metadata and selected previews are versioned.
+/eval/results/**/media/

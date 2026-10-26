@@ -50,6 +50,18 @@ class Session:
             self.track.append((round(float(tr.pos[0]), 2), round(float(tr.pos[1]), 2),
                                round(float(e['x']), 2), round(float(e['y']), 2)))
 
+    def _approve(self, payload):
+        # Reset before publishing the next plan. A timeout must never reuse a
+        # decision from a previous approval (including a replan in this mission).
+        self.decision = None
+        self.decided.clear()
+        self.pending = payload.get('plan')
+        try:
+            answered = self.decided.wait(timeout=600)
+            return {'decision': (self.decision or 'reject') if answered else 'reject'}
+        finally:
+            self.pending = None
+
     def start(self, prompt: str):
         if self.running:
             return False
@@ -57,16 +69,9 @@ class Session:
         self.running, self.result = True, None
         self.events.append({'agent': 'operator', 'msg': f'mission: {prompt}', 't': round(self.be.now(), 1)})
 
-        def approve(payload):
-            self.pending = payload.get('plan')
-            self.decided.clear()
-            self.decided.wait(timeout=600)
-            self.pending = None
-            return {'decision': self.decision or 'reject'}
-
         def run():
             try:
-                self.result = run_mission(self.rt, prompt, approve_fn=approve,
+                self.result = run_mission(self.rt, prompt, approve_fn=self._approve,
                                           on_event=lambda node, ev: self.events.append(
                                               {'agent': ev['agent'], 'msg': ev['msg'], 't': round(self.be.now(), 1)}))
                 self.events.append({'agent': 'supervisor', 'msg': f'outcome: {self.result.get("outcome")}',

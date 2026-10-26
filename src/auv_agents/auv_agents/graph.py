@@ -356,9 +356,15 @@ def build_graph(rt: Runtime, checkpointer=None):
         return upd
 
     def abort(state):
-        reason = state.get('reason') or 'abort'
+        last = state.get('records', [{}])[-1] if state.get('records') else {}
+        planned_abort = state.get('phase') == 'step_ok' and last.get('step', {}).get('tool') == 'abort'
+        reason = state.get('reason') or (last.get('step', {}).get('params', {}).get('reason')
+                                         if planned_abort else None) or 'abort'
         be = rt.backend
-        o = rt.registry.call('abort', {'reason': reason}, 10.0)
+        # A planned abort has already started the asynchronous ascent. Join it here,
+        # rather than cancelling and restarting it or reporting mission success early.
+        abort_ok = last.get('observation', {}).get('ok', False) if planned_abort else \
+            rt.registry.call('abort', {'reason': reason}, 10.0).ok
         t_end = time.time() + g['abort_surface_timeout_s']
         surfaced = False
         while time.time() < t_end:
@@ -371,7 +377,7 @@ def build_graph(rt: Runtime, checkpointer=None):
                 break
             time.sleep(0.05)
         return {'phase': 'aborted', 'outcome': 'aborted', 'reason': reason,
-                'events': [_ev('supervisor', f'safe abort ({reason}); abort call ok={o.ok}; surfaced={surfaced}')],
+                'events': [_ev('supervisor', f'safe abort ({reason}); abort call ok={abort_ok}; surfaced={surfaced}')],
                 'stats': stats(state, aborts=1)}
 
     def finish(state):
@@ -417,7 +423,7 @@ def build_graph(rt: Runtime, checkpointer=None):
         if phase == 'step_ok':
             last = state['records'][-1]['step'] if state.get('records') else {}
             if last.get('tool') == 'abort':
-                return 'finish'
+                return 'abort'
             return 'execute_step' if state['step_idx'] < len(plan['steps']) else 'finish'
         if phase == 'step_failed':
             code = (state['failed'].get('result') or {}).get('error_code')

@@ -55,6 +55,21 @@ def test_nominal_mission_succeeds_and_streams_agent_events():
         be.shutdown()
 
 
+def test_planned_abort_waits_for_ascent_and_reports_aborted():
+    be, rt = setup([P([DIVE, {'tool': 'abort', 'params': {'reason': 'operator stop'}}])])
+    try:
+        res = run_mission(rt, 'dive then stop the mission and surface')
+        assert res['outcome'] == 'aborted'
+        assert res['reason'] == 'operator stop'
+        assert be.sim.referee.report()['max_depth_m'] > 1.0
+        assert be.pose().depth < 0.3
+        assert not any(t.is_alive() for t in be._threads)
+        assert res['stats']['aborts'] == 1
+        assert res['records'][-1]['step']['tool'] == 'abort'
+    finally:
+        be.shutdown()
+
+
 def test_human_in_the_loop_interrupt_and_checkpointed_resume(tmp_path):
     from langgraph.checkpoint.sqlite import SqliteSaver
     be, rt = setup([P([DIVE, SURF])], approval='interrupt')

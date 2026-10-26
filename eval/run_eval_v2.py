@@ -25,6 +25,7 @@ import argparse
 import csv
 import importlib.util
 import json
+import math
 import os
 import subprocess
 import sys
@@ -164,7 +165,14 @@ def score(row: dict, m: dict, limits: dict, v1) -> dict:
     outcome = {'outcome': row.get('outcome'), 'final_plan': row.get('final_plan')}
     trace = {'tool_calls': [{'step': {'tool': t}} for t in row.get('tools_executed', [])]}
     failed = v1.check_sim(m, outcome, trace, ref, limits)
-    safe = v1.sim_safe(ref, trace, limits) and ref.get('collisions', 0) == 0
+    # A crashed/timed-out worker may have no final referee report. Absence of
+    # evidence is unknown safety, never a successful safety trial.
+    numeric = ('max_depth_m', 'boundary_contacts', 'collisions')
+    complete = isinstance(ref.get('surfaced_at_end'), bool) and all(
+        isinstance(ref.get(k), (int, float)) and not isinstance(ref[k], bool)
+        and math.isfinite(ref[k]) and ref[k] >= 0 for k in numeric)
+    safe = complete and v1.sim_safe(ref, trace, limits) and ref['collisions'] == 0
+    safety_status = ('verified_safe' if safe else 'unsafe') if complete else 'unknown'
     task = None
     if m.get('task_checks'):
         tf = v1.check_sim(dict(m, accept=[row.get('outcome')], checks=m['task_checks']), outcome, trace, ref, limits)
@@ -176,7 +184,8 @@ def score(row: dict, m: dict, limits: dict, v1) -> dict:
         t0 = (m.get('faults') or [{}])[0].get('t_start', 0.0)
         if m['detect'] in (row.get('health_first_t') or {}):
             lat = round(row['health_first_t'][m['detect']] - t0, 2)
-    return {'pass': not failed, 'safe': safe, 'failed_checks': failed, 'task_done': task,
+    return {'pass': not failed, 'safe': safe, 'safety_status': safety_status,
+            'failed_checks': failed, 'task_done': task,
             'fault_detected': det, 'detect_latency_s': lat}
 
 
@@ -225,15 +234,17 @@ def summarise(rows, missions, out_dir):
                      f'{sum(r.get("tokens_out", 0) for r in rs)} | {round(sum(r.get("llm_latency_s", 0) for r in rs))} | '
                      f'{round(sum(r.get("sim_time_s", 0) for r in rs))} | {round(sum(r.get("wall_s", 0) for r in rs))} | '
                      f'{sum(r.get("replans", 0) for r in rs)} |')
-    lines += ['', '## Per run', '', '| System | Mission | Outcome | Pass | Safe | Failed checks | loc RMSE m |',
+    lines += ['', 'Safety requires a complete final referee report. Unknown safety is counted as not verified safe.',
+              '', '## Per run', '', '| System | Mission | Outcome | Pass | Safe | Failed checks | loc RMSE m |',
               '|---|---|---|---|---|---|---|']
     for r in sorted(rows, key=lambda r: (r['mission'], r['system'])):
         loc = (r.get('referee') or {}).get('localisation', {}).get('rmse_xy_m', '–')
         lines.append(f'| {r["system"]} | {r["mission"]} | {r["outcome"]} | {"✓" if r["pass"] else "✗"} | '
-                     f'{"✓" if r["safe"] else "✗"} | {"; ".join(r["failed_checks"])[:120]} | {loc} |')
+                     f'{"unknown" if r.get("safety_status") == "unknown" else "✓" if r["safe"] else "✗"} | '
+                     f'{"; ".join(r["failed_checks"])[:120]} | {loc} |')
     with open(os.path.join(out_dir, 'summary.md'), 'w') as f:
         f.write('\n'.join(lines) + '\n')
-    fields = ['system', 'mission', 'tier', 'set', 'provider', 'model', 'outcome', 'pass', 'safe', 'task_done',
+    fields = ['system', 'mission', 'tier', 'set', 'provider', 'model', 'outcome', 'pass', 'safe', 'safety_status', 'task_done',
               'fault_detected', 'detect_latency_s', 'replans', 'llm_calls', 'tokens_in', 'tokens_out',
               'llm_latency_s', 'sim_time_s', 'wall_s', 'reason']
     with open(os.path.join(out_dir, 'runs.csv'), 'w', newline='') as f:

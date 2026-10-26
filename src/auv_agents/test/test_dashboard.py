@@ -9,6 +9,33 @@ PLAN = {'status': 'plan', 'reason': '', 'plan': {'summary': 't', 'abort_conditio
                   {'id': 2, 'tool': 'surface', 'timeout_s': 60, 'success': {'type': 'surfaced'}}]}}
 
 
+def test_approval_timeout_rejects_after_a_previous_approval():
+    from auv_agents.dashboard import Session
+    s = Session.__new__(Session)
+    s.decision = None
+    s.pending = None
+
+    class Decisions:
+        calls = 0
+
+        def clear(self):
+            assert s.decision is None
+
+        def wait(self, timeout):
+            self.calls += 1
+            assert s.pending is not None
+            if self.calls == 1:
+                s.decision = 'approve'
+                return True
+            return False
+
+    s.decided = Decisions()
+    assert s._approve({'plan': {'steps': [1]}}) == {'decision': 'approve'}
+    assert s.pending is None
+    assert s._approve({'plan': {'steps': [2]}}) == {'decision': 'reject'}
+    assert s.pending is None
+
+
 def test_dashboard_hitl_flow(tmp_path, monkeypatch):
     pytest.importorskip('fastapi')
     from fastapi.testclient import TestClient
