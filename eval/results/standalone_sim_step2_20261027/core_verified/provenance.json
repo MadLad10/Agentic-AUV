@@ -1,0 +1,43 @@
+{
+  "started_at": "2026-10-27T00:51:15.524094+06:00",
+  "scope": "Standalone simulator compatibility check; normal application environment unchanged",
+  "suite": "core",
+  "python": "/home/yaad/yaad_ws/auv_agentic_v2/.venv/bin/python",
+  "application_revision": "d6b7d1c88b39c90d543e80858e9e926ab2861230",
+  "target_site": "/tmp/auv_standalone_step2_20261027/site-packages",
+  "wheel": {
+    "path": "/home/yaad/yaad_ws/mujoco_marine_sim/dist/mujoco_marine_sim-0.1.0-py3-none-any.whl",
+    "sha256": "17f03b3ddd42526b9a730376d62c928e39c72a05fed79a765ee12ecfd36aa66d"
+  },
+  "installed_payload_files_verified": 12,
+  "import_and_resource_paths": {
+    "simulator": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/sim.py",
+    "config": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/config/sim.yaml",
+    "default_arena": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/config/arenas/default.yaml",
+    "alternative_arena": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/config/arenas/buoy_hidden.yaml"
+  },
+  "resource_sha256": {
+    "simulator": "e82e5d071c612e02b561909980511db37aa4465fa92d5bd625606fd991b688e6",
+    "config": "d6b050f9bffddd923bd5b7bb774b21b5fb56595de5e2602613ebc68206d3b8a9",
+    "default_arena": "8bc4d3fcd0f3993bf312d0e63673d7e68915f63a94bcc93e053aa86074c778ff",
+    "alternative_arena": "e6b69d36090151186f5c53d8e9a8a5f6eb6d5cea3b9f27896171af821cdf0605"
+  },
+  "versions": {
+    "mujoco-marine-sim": "0.1.0",
+    "mujoco": "3.16.0",
+    "numpy": "1.26.4",
+    "pytest": "7.4.4",
+    "langgraph": "1.2.16",
+    "gtsam": "4.2"
+  },
+  "render_backend": "egl",
+  "test_sources": {
+    "src/auv_marine_sim/test/test_marine_sim.py": "46f8b65ecac38ace1ba737551890e922e7fcac85b8c4f8b2bdcd6c2cf909944a",
+    "src/auv_onboard/test/test_onboard.py": "b9218d020afa548f337372804eeef8df094e1c1264a0d82158fafd60203123fe",
+    "src/auv_onboard/test/test_estimators.py": "1f9a7341c12ad87bd560c868e3cc3bfc92a19a4c49ab14df66f5b24373625e65",
+    "src/auv_onboard/test/test_sonar_mapmatch.py": "c26a5b883cd0ebeb7da45d905724e241539fd5f0e6555e839d93ea3c11fbc291",
+    "src/auv_onboard/test/test_tracking.py": "1b0624cc850ea07c924986dbfc1b6c19db1aa37c9b840e3a8a0a7ba7fd52e01e",
+    "src/auv_agents/test/test_graph.py": "ca79aacd4690b2eb0d405024243eb4fb12e2205f587f746c64c963b24e4c8ac0"
+  },
+  "application_runtime_modified": false
+}

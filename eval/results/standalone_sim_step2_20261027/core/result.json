@@ -1,0 +1,337 @@
+{
+  "suite": "core",
+  "verified": false,
+  "pytest_exit_code": 1,
+  "wall_seconds": 62.273,
+  "counts": {
+    "passed": 50,
+    "failure": 0,
+    "error": 2,
+    "skipped": 0
+  },
+  "simulator_imports_remained_isolated": true,
+  "loaded_simulator_modules": {
+    "auv_marine_sim": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/__init__.py",
+    "auv_marine_sim.faults": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/faults.py",
+    "auv_marine_sim.referee": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/referee.py",
+    "auv_marine_sim.world": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/world.py",
+    "auv_marine_sim.sim": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/sim.py",
+    "auv_marine_sim.sonar_image": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/sonar_image.py"
+  },
+  "cases": [
+    {
+      "name": "test_mjcf_has_world_and_vehicle",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.014,
+      "status": "passed"
+    },
+    {
+      "name": "test_idle_vehicle_floats_level_at_surface",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.623,
+      "status": "passed"
+    },
+    {
+      "name": "test_surge_thrust_moves_forward",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.165,
+      "status": "passed"
+    },
+    {
+      "name": "test_all_sensors_publish",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.031,
+      "status": "passed"
+    },
+    {
+      "name": "test_sonar_sees_gate_and_buoys",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.017,
+      "status": "passed"
+    },
+    {
+      "name": "test_camera_and_segmentation",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.57,
+      "status": "passed"
+    },
+    {
+      "name": "test_fault_types_are_validated",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.0,
+      "status": "passed"
+    },
+    {
+      "name": "test_dvl_dropout",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.06,
+      "status": "passed"
+    },
+    {
+      "name": "test_pressure_stuck",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.075,
+      "status": "passed"
+    },
+    {
+      "name": "test_camera_blackout_and_turbidity",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.845,
+      "status": "passed"
+    },
+    {
+      "name": "test_thruster_dead_produces_no_thrust",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.09,
+      "status": "passed"
+    },
+    {
+      "name": "test_leak_battery_drop_compass_imu_bias",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.295,
+      "status": "passed"
+    },
+    {
+      "name": "test_sonar_false_target_and_dropout",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.129,
+      "status": "passed"
+    },
+    {
+      "name": "test_fault_injector_window",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.0,
+      "status": "passed"
+    },
+    {
+      "name": "test_referee_gate_buoy_surface_collision",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.004,
+      "status": "passed"
+    },
+    {
+      "name": "test_sonar_image_and_autolabels",
+      "class": "src.auv_marine_sim.test.test_marine_sim",
+      "seconds": 0.084,
+      "status": "passed"
+    },
+    {
+      "name": "test_allocator_reproduces_wrench_and_masks_dead_thruster",
+      "class": "src.auv_onboard.test.test_onboard",
+      "seconds": 0.002,
+      "status": "passed"
+    },
+    {
+      "name": "test_allocator_saturates_uniformly",
+      "class": "src.auv_onboard.test.test_onboard",
+      "seconds": 0.001,
+      "status": "passed"
+    },
+    {
+      "name": "test_ekf_static_with_dvl_pressure_compass_stays_put",
+      "class": "src.auv_onboard.test.test_onboard",
+      "seconds": 0.044,
+      "status": "passed"
+    },
+    {
+      "name": "test_ekf_dead_reckoning_uncertainty_grows_and_landmark_gate",
+      "class": "src.auv_onboard.test.test_onboard",
+      "seconds": 0.033,
+      "status": "passed"
+    },
+    {
+      "name": "test_health_monitor_labels_and_veto",
+      "class": "src.auv_onboard.test.test_onboard",
+      "seconds": 0.011,
+      "status": "passed"
+    },
+    {
+      "name": "test_health_pressure_stuck_veto",
+      "class": "src.auv_onboard.test.test_onboard",
+      "seconds": 0.011,
+      "status": "passed"
+    },
+    {
+      "name": "test_closed_loop_gate_buoy_surface_on_ekf",
+      "class": "src.auv_onboard.test.test_onboard",
+      "seconds": 3.827,
+      "status": "passed"
+    },
+    {
+      "name": "test_dvl_dropout_degrades_localisation",
+      "class": "src.auv_onboard.test.test_onboard",
+      "seconds": 3.479,
+      "status": "passed"
+    },
+    {
+      "name": "test_leak_veto_surfaces_vehicle",
+      "class": "src.auv_onboard.test.test_onboard",
+      "seconds": 1.773,
+      "status": "passed"
+    },
+    {
+      "name": "test_factor_graph_navigation_closed_loop",
+      "class": "src.auv_onboard.test.test_estimators",
+      "seconds": 2.88,
+      "status": "passed"
+    },
+    {
+      "name": "test_numpy_gru_matches_torch",
+      "class": "src.auv_onboard.test.test_estimators",
+      "seconds": 0.001,
+      "status": "error",
+      "message": "failed on setup with \"FileNotFoundError: [Errno 2] No such file or directory: '/home/yaad/yaad_ws/auv_agentic_v2/eval/results/standalone_sim_step2_20261027/core/raw/pytest_tmp'\""
+    },
+    {
+      "name": "test_sonar_landmarks_update_the_filter_when_the_camera_is_blind",
+      "class": "src.auv_onboard.test.test_estimators",
+      "seconds": 0.455,
+      "status": "passed"
+    },
+    {
+      "name": "test_learned_velocity_with_online_current_estimate_survives_unseen_current",
+      "class": "src.auv_onboard.test.test_estimators",
+      "seconds": 2.875,
+      "status": "passed"
+    },
+    {
+      "name": "test_sonar_wall_map_matching_bounds_drift_without_dvl",
+      "class": "src.auv_onboard.test.test_estimators",
+      "seconds": 3.083,
+      "status": "passed"
+    },
+    {
+      "name": "test_ray_to_rect_distances_and_incidence",
+      "class": "src.auv_onboard.test.test_sonar_mapmatch",
+      "seconds": 0.0,
+      "status": "passed"
+    },
+    {
+      "name": "test_wall_beams_recover_a_wrong_pose_estimate",
+      "class": "src.auv_onboard.test.test_sonar_mapmatch",
+      "seconds": 0.04,
+      "status": "passed"
+    },
+    {
+      "name": "test_returns_from_objects_are_not_used_as_walls",
+      "class": "src.auv_onboard.test.test_sonar_mapmatch",
+      "seconds": 0.018,
+      "status": "passed"
+    },
+    {
+      "name": "test_fusion_beats_camera_only_and_keeps_class",
+      "class": "src.auv_onboard.test.test_tracking",
+      "seconds": 0.034,
+      "status": "passed"
+    },
+    {
+      "name": "test_nearby_buoys_do_not_swap_classes",
+      "class": "src.auv_onboard.test.test_tracking",
+      "seconds": 0.005,
+      "status": "passed"
+    },
+    {
+      "name": "test_sonar_only_target_in_camera_view_is_flagged_false",
+      "class": "src.auv_onboard.test.test_tracking",
+      "seconds": 0.003,
+      "status": "passed"
+    },
+    {
+      "name": "test_far_sonar_track_is_unclassified_not_false",
+      "class": "src.auv_onboard.test.test_tracking",
+      "seconds": 0.001,
+      "status": "passed"
+    },
+    {
+      "name": "test_gate_from_two_post_tracks",
+      "class": "src.auv_onboard.test.test_tracking",
+      "seconds": 0.001,
+      "status": "passed"
+    },
+    {
+      "name": "test_nominal_mission_succeeds_and_streams_agent_events",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 4.771,
+      "status": "passed"
+    },
+    {
+      "name": "test_planned_abort_waits_for_ascent_and_reports_aborted",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 1.511,
+      "status": "passed"
+    },
+    {
+      "name": "test_human_in_the_loop_interrupt_and_checkpointed_resume",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 0.001,
+      "status": "error",
+      "message": "failed on setup with \"FileNotFoundError: [Errno 2] No such file or directory: '/home/yaad/yaad_ws/auv_agentic_v2/eval/results/standalone_sim_step2_20261027/core/raw/pytest_tmp'\""
+    },
+    {
+      "name": "test_operator_rejects_plan",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 0.06,
+      "status": "passed"
+    },
+    {
+      "name": "test_refusal_and_validator_rejection_with_repair",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 1.549,
+      "status": "passed"
+    },
+    {
+      "name": "test_leak_health_veto_aborts_and_surfaces",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 1.909,
+      "status": "passed"
+    },
+    {
+      "name": "test_dvl_dropout_is_diagnosed_and_mission_continues",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 5.381,
+      "status": "passed"
+    },
+    {
+      "name": "test_camera_blackout_diagnosed_replanned_gate_found_by_sonar",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 1.187,
+      "status": "passed"
+    },
+    {
+      "name": "test_turbidity_sonar_cued_search_touches_red_buoy",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 5.786,
+      "status": "passed"
+    },
+    {
+      "name": "test_failed_search_queries_vlm_when_tracking_is_off",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 5.054,
+      "status": "passed"
+    },
+    {
+      "name": "test_diagnostics_llm_cannot_downgrade_a_veto",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 0.001,
+      "status": "passed"
+    },
+    {
+      "name": "test_llm_plan_with_optional_objective_cannot_fake_success",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 0.751,
+      "status": "passed"
+    },
+    {
+      "name": "test_refused_or_rejected_replan_mid_mission_surfaces",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 9.76,
+      "status": "passed"
+    },
+    {
+      "name": "test_skipped_failed_step_makes_the_outcome_partial",
+      "class": "src.auv_agents.test.test_graph",
+      "seconds": 2.623,
+      "status": "passed"
+    }
+  ]
+}

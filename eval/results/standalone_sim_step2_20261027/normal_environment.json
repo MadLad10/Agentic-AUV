@@ -1,0 +1,5 @@
+{
+  "normal_simulator_import": "/home/yaad/yaad_ws/auv_agentic_v2/build/auv_marine_sim/auv_marine_sim/__init__.py",
+  "standalone_distribution_in_normal_environment": null,
+  "step_1_migration_performed": false
+}

@@ -1,0 +1,28 @@
+{
+  "suite": "vision",
+  "verified": true,
+  "pytest_exit_code": 0,
+  "wall_seconds": 4.692,
+  "counts": {
+    "passed": 1,
+    "failure": 0,
+    "error": 0,
+    "skipped": 0
+  },
+  "simulator_imports_remained_isolated": true,
+  "loaded_simulator_modules": {
+    "auv_marine_sim": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/__init__.py",
+    "auv_marine_sim.faults": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/faults.py",
+    "auv_marine_sim.referee": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/referee.py",
+    "auv_marine_sim.world": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/world.py",
+    "auv_marine_sim.sim": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/sim.py"
+  },
+  "cases": [
+    {
+      "name": "test_yolo_detects_gate_with_plausible_range_and_bearing",
+      "class": "src.auv_onboard.test.test_yolo_detector",
+      "seconds": 4.646,
+      "status": "passed"
+    }
+  ]
+}

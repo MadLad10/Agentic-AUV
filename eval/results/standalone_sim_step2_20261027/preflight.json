@@ -1,0 +1,32 @@
+{
+  "simulator_module": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/sim.py",
+  "configuration": "/tmp/auv_standalone_step2_20261027/site-packages/auv_marine_sim/config/sim.yaml",
+  "distribution": "0.1.0",
+  "versions": {
+    "numpy": "1.26.4",
+    "mujoco": "3.16.0",
+    "pytest": "7.4.4",
+    "gtsam": "4.2",
+    "torch": "2.12.0"
+  },
+  "camera_shape": [
+    480,
+    640,
+    3
+  ],
+  "sonar_shape": [
+    256,
+    448
+  ],
+  "sensor_keys": [
+    "battery",
+    "compass",
+    "dvl",
+    "imu",
+    "leak",
+    "pressure",
+    "sonar",
+    "thrusters"
+  ],
+  "wheel_sha256": "17f03b3ddd42526b9a730376d62c928e39c72a05fed79a765ee12ecfd36aa66d"
+}

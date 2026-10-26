@@ -1,0 +1,53 @@
+{
+  "verified_at": "2026-10-27T00:55:55.566098+06:00",
+  "step": 2,
+  "verified": true,
+  "total_final_tests_passed": 54,
+  "final_failures": 0,
+  "final_errors": 0,
+  "final_skips": 0,
+  "suites": {
+    "core": {
+      "verified": true,
+      "passed": 52,
+      "wall_seconds": 64.077,
+      "result": "core_verified/result.json",
+      "provenance": "core_verified/provenance.json",
+      "junit": "core_verified/junit.xml"
+    },
+    "vision": {
+      "verified": true,
+      "passed": 1,
+      "wall_seconds": 4.692,
+      "result": "vision/result.json",
+      "provenance": "vision/provenance.json",
+      "junit": "vision/junit.xml"
+    },
+    "ros": {
+      "verified": true,
+      "passed": 1,
+      "wall_seconds": 7.824,
+      "result": "ros/result.json",
+      "provenance": "ros/provenance.json",
+      "junit": "ros/junit.xml"
+    }
+  },
+  "wheel_sha256": "17f03b3ddd42526b9a730376d62c928e39c72a05fed79a765ee12ecfd36aa66d",
+  "wheel_payload_matches_current_standalone_source": true,
+  "negative_import_guard_verified": true,
+  "initial_attempt": {
+    "result": "core/result.json",
+    "passed": 50,
+    "setup_errors": 2,
+    "cause": "Missing parent directory for pytest temporary files",
+    "resolution": "Runner creates raw directory; full core suite rerun passed all 52 checks"
+  },
+  "step_1_dependency_migration_performed": false,
+  "application_runtime_and_original_tests_modified": false,
+  "normal_environment": {
+    "normal_simulator_import": "/home/yaad/yaad_ws/auv_agentic_v2/build/auv_marine_sim/auv_marine_sim/__init__.py",
+    "standalone_distribution_in_normal_environment": null,
+    "step_1_migration_performed": false
+  },
+  "runner_sha256": "3e3963e4c7649c5a1946f36740c8836a6a658647e482427a51362e4c2bd5a716"
+}

@@ -9,7 +9,7 @@ traces/*
 !traces/.gitkeep
 runs/
 # eval: keep summary.md / summary.csv / runs.csv / runs.jsonl, drop raw per-run sim outputs
-eval/results/*/raw/
+eval/results/**/raw/
 *.bag
 rosbag*/
 __pycache__/

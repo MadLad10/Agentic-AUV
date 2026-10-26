@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="7.799" timestamp="2026-10-27T00:53:15.977263" hostname="madLad"><testcase classname="tests.integration.test_ros2_vehicle" name="test_v1_ros_backend_drives_mujoco_vehicle" time="7.785" /></testsuite></testsuites>

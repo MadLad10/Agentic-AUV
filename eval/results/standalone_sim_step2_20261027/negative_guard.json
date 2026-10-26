@@ -1,0 +1,7 @@
+{
+  "verified": true,
+  "scenario": "Empty target leaves original simulator on ROS overlay; runner must reject it before pytest",
+  "return_code": 1,
+  "expected_rejection": "escaped the isolated target",
+  "tests_started": false
+}

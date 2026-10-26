@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="4.663" timestamp="2026-10-27T00:52:32.736956" hostname="madLad"><testcase classname="src.auv_onboard.test.test_yolo_detector" name="test_yolo_detects_gate_with_plausible_range_and_bearing" time="4.646" /></testsuite></testsuites>
